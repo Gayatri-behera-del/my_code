@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Block Shift Game</title>
+    <style>
+        /* --------------------------------- */
+        /* CSS STYLES */
+        /* --------------------------------- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #eef2f7;
+            margin: 0;
+            padding-top: 50px;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        #game-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #info-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #34495e;
+        }
+
+        #info-panel p {
+            margin: 0 15px;
+            font-weight: bold;
+        }
+
+        #restart-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1em;
+        }
+
+        #restart-btn:hover {
+            background-color: #2980b9;
+        }
+
+        /* GRID STYLING */
+        #game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            width: 300px;
+            height: 300px;
+            gap: 5px;
+            border: 5px solid #bdc3c7;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .block {
+            background-color: #95a5a6; /* Passive Block Color */
+            border-radius: 3px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .block:active {
+            transform: scale(0.95);
+        }
+
+        /* TARGET & TRAP STYLES */
+        .target-block {
+            background-color: #2ecc71 !important; /* Green - Safe/Go */
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.7);
+        }
+
+        .trap-block {
+            background-color: #e74c3c !important; /* Red - Danger/Stop */
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Color Block Shift</h1>
+
+    <div id="game-container">
+        <div id="info-panel">
+            <p>Score: <span id="score">0</span></p>
+            <p>Time: <span id="timer">30</span></p>
+            <button id="restart-btn">Restart Game</button>
+        </div>
+        <div id="game-grid">
+            </div>
+    </div>
+
+    <script>
+        // ---------------------------------
+        // JAVASCRIPT LOGIC
+        // ---------------------------------
+        const grid = document.getElementById('game-grid');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const restartBtn = document.getElementById('restart-btn');
+
+        let score = 0;
+        let timeLeft = 30;
+        let timerInterval;
+        let gameActive = false;
+
+        let targetId = -1;
+        let trapId = -1;
+        const totalBlocks = 16;
+
+        // Utility to get a random ID from 1 to 16
+        const getRandomId = () => Math.floor(Math.random() * totalBlocks) + 1;
+
+        // --- CORE GAME LOGIC ---
+
+        /** Sets the random target and trap blocks */
+        function setNewBlocks() {
+            // Remove existing classes
+            document.querySelectorAll('.block').forEach(block => {
+                block.classList.remove('target-block', 'trap-block');
+            });
+
+            // Get two unique random IDs
+            targetId = getRandomId();
+            do {
+                trapId = getRandomId();
+            } while (trapId === targetId);
+
+            // Apply new classes
+            document.querySelector('.block[data-id="${targetId}"]').classList.add('target-block');
+            document.querySelector('.block[data-id="${trapId}"]').classList.add('trap-block');
+        }
+
+        /** Handles block clicks */
+        function handleBlockClick(event) {
+            if (!gameActive || !event.target.classList.contains('block')) return;
+
+            const clickedId = parseInt(event.target.dataset.id);
+
+            if (clickedId === targetId) {
+                // Correct click!
+                score += 10;
+                scoreDisplay.textContent = score;
+                setNewBlocks(); // Immediately shift the blocks
+            } else if (clickedId === trapId) {
+                // Wrong click (TRAP)!
+                gameOver(false);
+            } else {
+                // Wrong click (PASSIVE) - Penalty
+                score = Math.max(0, score - 5);
+                scoreDisplay.textContent = score;
+            }
+        }
+
+        /** Starts the timer */
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    gameOver(true);
+                }
+            }, 1000);
+        }
+
+        /** Initializes the game grid */
+        function initializeGrid() {
+            grid.innerHTML = ''; // Clear previous grid
+            for (let i = 1; i <= totalBlocks; i++) {
+                const block = document.createElement('div');
+                block.classList.add('block');
+                block.dataset.id = i;
+                grid.appendChild(block);
+            }
+        }
+
+        /** Starts a new game */
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            timeLeft = 30;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+
+            clearInterval(timerInterval);
+            initializeGrid();
+            setNewBlocks();
+            startTimer();
+            restartBtn.textContent = 'Restart Game';
+        }
+
+        /** Ends the game */
+        function gameOver(timeUp) {
+            gameActive = false;
+            clearInterval(timerInterval);
+
+            if (timeUp) {
+                alert( 'Times up! Final Score: ${score}');
+            } else {
+                alert('Game Over! You hit the TRAP! Final Score: ${score}');
+            }
+            restartBtn.textContent = 'Play Again';
+        }
+
+        // --- EVENT LISTENERS ---
+        grid.addEventListener('click', handleBlockClick);
+        restartBtn.addEventListener('click', startGame);
+
+        // Start the game when the page loads
+        startGame();
+
+    </script>
+</body>
+</html>

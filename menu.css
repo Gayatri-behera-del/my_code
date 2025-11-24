@@ -1,0 +1,105 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+header {
+    background-color: #38761d; /* Deep Green color, similar to the menu */
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 5px solid #ffcc00; /* Yellow accent */
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin: 0;
+}
+
+header h2 {
+    font-size: 1.5em;
+    margin: 5px 0 10px 0;
+}
+
+.cuisine-info {
+    font-style: italic;
+    font-weight: bold;
+}
+
+/* MENU CONTAINER LAYOUT */
+.menu-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+    display: flex;
+    flex-wrap: wrap; /* Allows sections to wrap on smaller screens */
+    gap: 20px; /* Space between the main columns/sections */
+}
+
+.menu-category {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* Distributes the sections evenly in a row (e.g., three columns) */
+    flex: 1 1 calc(33.333% - 20px); 
+    min-width: 300px; /* Ensures sections don't get too narrow on small screens */
+}
+
+/* CATEGORY HEADINGS */
+.category-heading {
+    background-color: #5b953d; /* Lighter Green for subheadings */
+    color: white;
+    padding: 10px 15px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 1.3em;
+}
+
+/* MENU ITEM STYLING */
+.menu-item {
+    display: flex;
+    justify-content: space-between; /* Puts name on left, price on right */
+    padding: 8px 0;
+    border-bottom: 1px dashed #ccc;
+    font-size: 1.1em;
+}
+
+.menu-item:last-child {
+    border-bottom: none; /* Remove border from the last item in a list */
+}
+
+.item-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.item-price {
+    font-weight: bold;
+    color: #cc0000; /* Red color for price for emphasis */
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #333;
+    color: white;
+}
+
+/* RESPONSIVENESS (for smaller screens) */
+@media (max-width: 768px) {
+    .menu-container {
+        flex-direction: column; /* Stacks sections vertically on mobile */
+        gap: 15px;
+    }
+    
+    .menu-category {
+        min-width: 100%; /* Ensures section takes full width on mobile */
+    }
+}
