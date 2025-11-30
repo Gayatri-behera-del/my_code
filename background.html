@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Whispering Cells - Generative Art</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; display: flex; justify-content: center; align-items: center; }
+        canvas { display: block; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/p5.js"></script>
+    <script>
+        // --- Configuration Parameters ---
+        const numCells = 500; // How many cells to draw
+        const maxCellSize = 80; // Maximum radius of a cell
+        const minCellSize = 10; // Minimum radius
+        const maxTransparency = 100; // Alpha value (0-255)
+        const bgColor = [26, 26, 26]; // Dark background
+
+        function setup() {
+            // Create a canvas that fits the window (or a fixed size if preferred)
+            createCanvas(windowWidth, windowHeight);
+            background(bgColor[0], bgColor[1], bgColor[2]); // Set initial background
+
+            noStroke(); // No outline for the shapes
+
+            // Loop to draw multiple cells
+            for (let i = 0; i < numCells; i++) {
+                // Calculate position:
+                // Random x, y within the canvas
+                let x = random(width);
+                let y = random(height);
+
+                // Calculate size:
+                // Larger cells appear towards the center-bottom, smaller towards top-left
+                // You can experiment with different size logic!
+                let sizeFactor = map(dist(x, y, width / 2, height), 0, dist(0, 0, width, height), 0.1, 1);
+                let currentCellSize = map(sizeFactor, 0, 1, minCellSize, maxCellSize);
+                currentCellSize += random(-10, 10); // Add a little randomness to size
+
+                // Calculate color:
+                // Cells in the top-left are more blue/purple, bottom-right more orange/yellow
+                let r = map(x, 0, width, 50, 255); // Red component
+                let g = map(y, 0, height, 50, 150); // Green component
+                let b = map(x + y, 0, width + height, 100, 50); // Blue component (with some influence from both)
+                
+                // Add some subtle random variation to color
+                r += random(-30, 30);
+                g += random(-20, 20);
+                b += random(-10, 10);
+
+                // Ensure color components stay within 0-255 range
+                r = constrain(r, 0, 255);
+                g = constrain(g, 0, 255);
+                b = constrain(b, 0, 255);
+
+                // Set fill color with transparency
+                fill(r, g, b, random(50, maxTransparency)); // Random transparency for depth
+
+                // Draw the ellipse
+                ellipse(x, y, currentCellSize, currentCellSize);
+            }
+            
+            // Optional: Add a subtle overlay to blend everything
+            // fill(0, 0, 0, 50); // Slight dark transparent overlay
+            // rect(0, 0, width, height);
+            
+            // To ensure it doesn't redraw continuously for a static image
+            noLoop(); 
+        }
+
+        // If you want to allow resizing and redraw the art
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            background(bgColor[0], bgColor[1], bgColor[2]);
+            // Rerun the drawing logic for a new painting on resize
+            for (let i = 0; i < numCells; i++) {
+                let x = random(width);
+                let y = random(height);
+                let sizeFactor = map(dist(x, y, width / 2, height), 0, dist(0, 0, width, height), 0.1, 1);
+                let currentCellSize = map(sizeFactor, 0, 1, minCellSize, maxCellSize);
+                currentCellSize += random(-10, 10);
+
+                let r = map(x, 0, width, 50, 255);
+                let g = map(y, 0, height, 50, 150);
+                let b = map(x + y, 0, width + height, 100, 50);
+                r = constrain(r + random(-30, 30), 0, 255);
+                g = constrain(g + random(-20, 20), 0, 255);
+                b = constrain(b + random(-10, 10), 0, 255);
+
+                fill(r, g, b, random(50, maxTransparency));
+                ellipse(x, y, currentCellSize, currentCellSize);
+            }
+        }
+
+    </script>
+</body>
+</html>

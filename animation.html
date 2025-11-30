@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The Waving Blob - Animated Character</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #2c3e50; display: flex; justify-content: center; align-items: center; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/p5.js"></script>
+    <script>
+        let waveAngle = 0; // Controls the arm waving motion
+        let bounceOffset = 0; // Controls the up-down bounce
+        let blobColor;
+        let eyeColor;
+        let armColor;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            blobColor = color(231, 76, 60); // Reddish-orange
+            eyeColor = color(255); // White eyes
+            armColor = color(46, 204, 113); // Green arm
+            noStroke(); // No outlines for smooth blob shapes
+        }
+
+        function draw() {
+            background(44, 62, 80); // Dark blue background
+
+            // Update animation variables using sine/cosine for smooth oscillation
+            waveAngle += 0.05; // Speed of the arm wave
+            bounceOffset = sin(frameCount * 0.05) * 10; // Slow bounce up and down
+
+            // --- Draw the Blob Character ---
+            
+            push(); // Isolate transformations for the blob
+            
+            // Move the whole blob to a central position, adjusting for bounce
+            translate(width / 2, height / 2 + bounceOffset); 
+
+            // 1. Main Body
+            fill(blobColor);
+            ellipse(0, 0, 150, 180); // Oval body
+
+            // 2. Eyes
+            fill(eyeColor);
+            ellipse(-30, -30, 20, 25); // Left eye
+            ellipse(30, -30, 20, 25); // Right eye
+
+            // Pupils
+            fill(0); // Black pupils
+            ellipse(-30, -30, 8, 10);
+            ellipse(30, -30, 8, 10);
+
+            // 3. Mouth
+            fill(0);
+            arc(0, 30, 40, 20, 0, PI, CHORD); // Simple arc mouth
+
+            // 4. Waving Arm
+            fill(armColor);
+            
+            // Translate to the arm's pivot point on the blob's side
+            translate(70, -50); 
+            // Rotate the arm based on waveAngle
+            rotate(sin(waveAngle) * 0.8 - HALF_PI / 2); // Rotate back and forth
+
+            // Draw the arm as a rectangle
+            rect(0, -10, 80, 20, 10); // rect(x, y, w, h, borderRadius)
+            
+            pop(); // Restore previous transformations
+        }
+
+        // Handle window resizing
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+
+    </script>
+</body>
+</html>

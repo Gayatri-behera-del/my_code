@@ -1,0 +1,95 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 25px;
+}
+
+/* Input and Button Styling */
+.input-container {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+#taskInput {
+    flex-grow: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px 0 0 5px;
+    font-size: 16px;
+    outline: none;
+}
+
+#addTaskBtn {
+    padding: 10px 15px;
+    border: none;
+    background-color: #5cb85c;
+    color: white;
+    cursor: pointer;
+    border-radius: 0 5px 5px 0;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+#addTaskBtn:hover {
+    background-color: #4cae4c;
+}
+
+/* Task List Styling */
+#taskList {
+    list-style: none;
+    padding: 0;
+}
+
+#taskList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#taskList li:last-child {
+    border-bottom: none;
+}
+
+/* Completed Task Style (Toggled by JS) */
+.completed {
+    text-decoration: line-through;
+    color: #aaa;
+}
+
+/* Delete Button Styling */
+.delete-btn {
+    background: none;
+    border: none;
+    color: #ff6347;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px;
+    transition: color 0.2s;
+}
+
+.delete-btn:hover {
+    color: #cc4c38;
+}

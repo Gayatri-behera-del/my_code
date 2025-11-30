@@ -1,0 +1,116 @@
+
+
+/*  Centering the login page */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f7f9fc; /* Slightly cooler background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* Login box Styling */
+.login-container {
+    background-color: #ffffff;
+    padding: 50px 40px; 
+    border-radius: 12px;      /* for rounded corners */
+    width: 320px;
+    text-align: center;
+
+    /* Enhanced Box Shadow for depth  */
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 
+                0 4px 10px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease-in-out;
+}
+
+/*  Hover Effect */
+.login-container:hover {
+    transform: translateY(-2px);
+}
+
+/* Header */
+h1 {
+    font-size: 32px; /* Slightly larger title */
+    font-weight: 600;
+    margin-bottom: 30px;
+    color: #1a1a1a;
+}
+
+/* Form Groups */
+.form-group {
+    text-align: left;
+    margin-bottom: 25px; /* Increased spacing */
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #444;
+    font-size: 14px;
+}
+
+/* Input Fields */
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 14px; /* Slightly more vertical padding */
+    border: 1px solid #e0e0e0; /* Lighter border color */
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 16px;
+    color: #333;
+    /* Subtle inner shadow for a "pressed" look */
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+    color: #999; /* Adjust placeholder color */
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus {
+    border-color: #3b82f6; /* A more vibrant blue */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Ring focus effect */
+    outline: none;
+}
+
+/* Login Button */
+.login-button {
+    width: 100%;
+    padding: 14px;
+    background-color: #3b82f6; /* Stronger blue, matching the image */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); /* Button shadow */
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.login-button:hover {
+    background-color: #2563eb;      /* Slightly darker on hover */
+    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Forgot Password Link */
+.forgot-link {
+    display: block;
+    margin-top: 25px;
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
