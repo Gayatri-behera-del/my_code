@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fine Payment & Justification</title>
+    <link rel="stylesheet" href="website.css">
+</head>
+<body>
+    <header>
+        <h1>Compulsory Fine Payment Gateway</h1>
+        <p>Eligibility Waiver - **₹1000**</p>
+    </header>
+
+    <main>
+        <div class="card form-container">
+            <h2>Required Details & Justification</h2>
+            <form id="justification-form">
+                
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" required placeholder="Enter your full name">
+
+                <label for="rollno">Roll Number:</label>
+                <input type="text" id="rollno" name="rollno" required placeholder="Enter your roll number">
+
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" required placeholder="Contact phone number">
+
+                <label for="reason">Why is your attendance low? (Tell us your reasons):</label>
+                <textarea id="reason" name="reason" rows="5" placeholder="e.g., Medical issues, family commitment, etc. This is required for administration review." required></textarea>
+
+                <div class="payment-info">
+                    <h3>Compulsory Fine Amount: **₹1000**</h3>
+                    <p>By clicking below, you agree to the college policy regarding the attendance waiver fine.</p>
+                </div>
+
+                <button type="submit" class="payment-button-large" onclick="handlePayment(event)">Pay Fine Here & Submit Details</button>
+            </form>
+        </div>
+        <p style="text-align: center; margin-top: 20px;"><a href="website.html">← Back to Dashboard</a></p>
+    </main>
+
+    <script>
+        // CLIENT-SIDE PAYMENT SIMULATION
+        function handlePayment(event) {
+            event.preventDefault(); 
+            const form = document.getElementById('justification-form');
+            if (form.checkValidity()) {
+                const name = document.getElementById('name').value;
+                alert(`Thank you, ${name}. Your justification has been recorded. Redirecting you to the secure payment portal for the ₹1000 fine...`);
+                // In a real system, the server generates a secure link and redirects the user.
+            } else {
+                form.reportValidity();
+            }
+        }
+    </script>
+</body>
+</html>

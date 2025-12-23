@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIRIKSHAN: AI Road Safety Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Command Center Theme */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+        }
+        .monitor-card {
+            background-color: #1e293b; /* Slate 800 */
+            border: 1px solid #334155; /* Slate 700 */
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+        }
+        .header-text {
+            font-family: 'Orbitron', sans-serif;
+            color: #34d399; /* Emerald 400 */
+        }
+        .alert-item-critical {
+            background-color: #ef44441a; /* Red 500 with alpha */
+            border-left: 3px solid #ef4444; /* Red 500 */
+        }
+        .alert-item-warning {
+            background-color: #f59e0b1a; /* Amber 500 with alpha */
+            border-left: 3px solid #f59e0b; /* Amber 500 */
+        }
+        #road-canvas {
+            background-color: #000;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(52, 211, 153, 0.5); /* Inner glow */
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- Header -->
+    <header class="text-center mb-8">
+        <h1 class="text-4xl sm:text-5xl font-bold header-text">
+            <i class="fa-solid fa-road mr-2 text-emerald-400"></i> NIRIKSHAN <span class="text-xl sm:text-3xl font-light text-white">AI Road Safety Monitor</span>
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">Nodal Feed: NH 49, Mayurbhanj Region | Status: LIVE (Simulated YOLO Analysis)</p>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Column 1: Live Simulation & AI Status (2/3 width on desktop) -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Live Feed Simulation -->
+            <div class="monitor-card">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-400 flex items-center">
+                    <i class="fa-solid fa-video mr-2"></i> Live Anomaly Detection
+                </h2>
+                <!-- Canvas for Road Simulation -->
+                <canvas id="road-canvas" class="w-full" height="400"></canvas>
+                <div class="mt-4 flex justify-between text-sm text-slate-400">
+                    <p><i class="fa-solid fa-microchip mr-1"></i> **AI Model:** YOLOv7 (Simulated)</p>
+                    <p id="detection-status"><i class="fa-solid fa-circle-check text-green-500 mr-1"></i> Status: Analyzing 30 FPS</p>
+                </div>
+                <!-- Image for context -->
+                <div class="mt-4">
+                  [Image of YOLO Object Detection]
+                  <p class="text-xs text-slate-500 mt-2">The system simulates an object detection model like YOLO, which draws bounding boxes and labels on detected hazards in real-time.</p>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="monitor-card text-center p-4">
+                    <div id="pothole-count" class="text-4xl font-bold text-red-500">0</div>
+                    <p class="text-slate-400 mt-1">Pothole Alerts (Last 1hr)</p>
+                </div>
+                <div class="monitor-card text-center p-4">
+                    <div id="debris-count" class="text-4xl font-bold text-yellow-500">0</div>
+                    <p class="text-slate-400 mt-1">Debris/Blockage Alerts</p>
+                </div>
+                <div class="monitor-card text-center p-4">
+                    <div id="traffic-status" class="text-2xl font-bold text-emerald-400 mt-2">NORMAL</div>
+                    <p class="text-slate-400 mt-1">Congestion Status</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Column 2: Alert Log & Heat Map (1/3 width on desktop) -->
+        <div class="lg:col-span-1 space-y-6">
+
+            <!-- Real-time Alert Log -->
+            <div class="monitor-card h-96 overflow-y-auto">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-400 flex items-center">
+                    <i class="fa-solid fa-bell mr-2"></i> Real-time Alert Log
+                </h2>
+                <div id="alert-log" class="space-y-3">
+                    <!-- Alerts will be inserted here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- High-Risk Zone Heat Map Mock -->
+            <div class="monitor-card">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-400 flex items-center">
+                    <i class="fa-solid fa-map-location-dot mr-2"></i> High-Risk Zones
+                </h2>
+                <div class="h-40 bg-slate-700 rounded-lg p-2 flex items-center justify-center relative">
+                    <!-- Simple map mock with risk indicators -->
+                    <p class="text-sm text-slate-400 absolute top-2 left-2">Risk Heatmap (Simulated)</p>
+                    <img src="https://placehold.co/300x150/0f172a/d4d4d4?text=Northern+Odisha+Map" alt="Map Mockup" class="opacity-30 absolute inset-0 w-full h-full object-cover rounded-lg">
+                    
+                    <div class="relative z-10 space-y-2">
+                        <div class="flex items-center text-red-500 font-semibold"><i class="fa-solid fa-circle-exclamation mr-2"></i> Keonjhar Bypass: HIGH RISK (Speeding)</div>
+                        <div class="flex items-center text-yellow-500 font-semibold"><i class="fa-solid fa-circle-exclamation mr-2"></i> Balasore Coastal Rd: Moderate (Debris)</div>
+                        <div class="flex items-center text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check mr-2"></i> Angul Feeder Route: Low Risk</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="mt-8 text-center text-slate-500 text-xs">
+        &copy; 2025 NIRIKSHAN Project | Northern Regional AI Hackathon | Built with AI & JavaScript.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('road-canvas');
+            const ctx = canvas.getContext('2d');
+            const alertLog = document.getElementById('alert-log');
+            const potholeCountDisplay = document.getElementById('pothole-count');
+            const debrisCountDisplay = document.getElementById('debris-count');
+            const trafficStatusDisplay = document.getElementById('traffic-status');
+
+            let potholeCount = 0;
+            let debrisCount = 0;
+            let currentAlerts = [];
+            const MAX_ALERTS = 10;
+
+            // --- Canvas Setup ---
+
+            function resizeCanvas() {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight || 400;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // --- Drawing Functions ---
+
+            function drawRoad() {
+                // Background (Road Surface)
+                ctx.fillStyle = '#475569'; /* Slate 600 */
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Lane Lines
+                const lineWidth = 10;
+                const lineGap = 40;
+                ctx.fillStyle = '#facc15'; /* Amber 400 */
+                
+                // Draw dashed center line
+                for (let y = 0; y < canvas.height; y += lineGap) {
+                    ctx.fillRect(canvas.width / 2 - lineWidth / 2, y, lineWidth, lineGap / 2);
+                }
+                
+                // Draw simulated lane markings (side lines)
+                ctx.fillStyle = '#94a3b8'; /* Slate 400 */
+                ctx.fillRect(canvas.width * 0.1, 0, 5, canvas.height);
+                ctx.fillRect(canvas.width * 0.9 - 5, 0, 5, canvas.height);
+            }
+
+            function drawAnomaly(x, y, type) {
+                ctx.save();
+                ctx.beginPath();
+                
+                if (type === 'pothole') {
+                    // Pothole (dark, irregular circle)
+                    ctx.arc(x, y, 15, 0, Math.PI * 2);
+                    ctx.fillStyle = '#0f172a'; /* Deep dark center */
+                    ctx.fill();
+                    ctx.strokeStyle = '#ef4444'; /* Red border for highlight */
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = '12px Inter';
+                    ctx.fillText('Pothole', x + 20, y - 10);
+                } else if (type === 'debris') {
+                    // Debris (orange rectangle)
+                    ctx.rect(x - 10, y - 5, 30, 15);
+                    ctx.fillStyle = '#f59e0b'; /* Amber 500 */
+                    ctx.fill();
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.font = '12px Inter';
+                    ctx.fillText('Debris', x + 35, y + 5);
+                }
+                ctx.restore();
+            }
+
+            // --- Alert Management ---
+
+            function addAlert(type, message, time) {
+                const timestamp = new Date().toLocaleTimeString();
+                
+                const newAlert = {
+                    type,
+                    message,
+                    time: timestamp
+                };
+
+                currentAlerts.unshift(newAlert);
+                if (currentAlerts.length > MAX_ALERTS) {
+                    currentAlerts.pop();
+                }
+                
+                updateAlertLogUI();
+                updateMetrics(type);
+            }
+
+            function updateAlertLogUI() {
+                alertLog.innerHTML = '';
+                currentAlerts.forEach(alert => {
+                    const icon = alert.type === 'pothole' ? 'fa-triangle-exclamation' : 'fa-dumpster-fire';
+                    const colorClass = alert.type === 'pothole' ? 'alert-item-critical' : 'alert-item-warning';
+                    
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `p-2 rounded text-sm ${colorClass} transition duration-300 hover:shadow-lg`;
+                    alertDiv.innerHTML = `
+                        <p class="font-semibold flex items-center">
+                            <i class="fa-solid ${icon} mr-2"></i> ${alert.message}
+                        </p>
+                        <p class="text-xs mt-0.5 text-slate-400">Time: ${alert.time}</p>
+                    `;
+                    alertLog.appendChild(alertDiv);
+                });
+            }
+            
+            function updateMetrics(type) {
+                if (type === 'pothole') {
+                    potholeCount++;
+                    potholeCountDisplay.textContent = potholeCount;
+                    trafficStatusDisplay.textContent = 'CAUTION';
+                    trafficStatusDisplay.classList.remove('text-emerald-400');
+                    trafficStatusDisplay.classList.add('text-yellow-500');
+                } else if (type === 'debris') {
+                    debrisCount++;
+                    debrisCountDisplay.textContent = debrisCount;
+                }
+            }
+
+            // --- Animation Loop (Simulation) ---
+
+            let anomalyPositions = [];
+            let frameCount = 0;
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawRoad();
+                
+                frameCount++;
+
+                // 1. Generate new anomalies periodically
+                if (frameCount % 150 === 0) { // New anomalies every 5 seconds (approx)
+                    const anomalyType = Math.random() < 0.6 ? 'pothole' : 'debris';
+                    const x = Math.random() * (canvas.width * 0.8 - canvas.width * 0.2) + canvas.width * 0.2; // Keep it on the road
+                    const y = Math.random() * (canvas.height * 0.8 - canvas.height * 0.2) + canvas.height * 0.2;
+                    
+                    anomalyPositions.push({ x, y, type: anomalyType, detected: false });
+                }
+
+                // 2. Process and decay anomalies
+                anomalyPositions.forEach((anomaly, index) => {
+                    // Simulating AI detection (always successful in this demo)
+                    drawAnomaly(anomaly.x, anomaly.y, anomaly.type);
+                    
+                    if (!anomaly.detected) {
+                        // Trigger alert only once upon 'detection'
+                        const message = anomaly.type === 'pothole' 
+                            ? `CRITICAL POTHOLE DETECTED @ Lat/Long Mockup: ${anomaly.x.toFixed(0)}, ${anomaly.y.toFixed(0)}`
+                            : `ROAD BLOCKAGE/DEBRIS DETECTED @ Lane 1`;
+                        
+                        addAlert(anomaly.type, message);
+                        anomaly.detected = true;
+                    }
+
+                    // Simple decay (remove old alerts)
+                    if (frameCount % 500 === 0 && Math.random() < 0.3) {
+                        anomalyPositions.splice(index, 1);
+                    }
+                });
+
+                requestAnimationFrame(animate);
+            }
+            
+            // Initial call to start the simulation
+            window.onload = function () {
+                animate();
+                // Initial status reset for clean start
+                potholeCountDisplay.textContent = '0';
+                debrisCountDisplay.textContent = '0';
+            };
+        });
+    </script>
+</body>
+</html>

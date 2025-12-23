@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance & Eligibility Portal</title>
+    <link rel="stylesheet" href="student1.css">
+</head>
+<body>
+    <header>
+        <h1>SmartAttend College Portal</h1>
+        <p>Welcome, <span id="student-name">Sweety</span> (Roll No: 12345)</p>
+    </header>
+
+    <main>
+        <h2>Exam Eligibility Check</h2>
+
+        <div class="card confirmation-card">
+            <h3>Attendance Percentage Confirmation</h3>
+            <p>For security, please enter your last calculated attendance percentage:</p>
+            <div class="input-group">
+                <input type="number" id="user-percentage" placeholder="e.g., 68.5" min="0" max="100" step="0.1" required>
+                <button class="confirm-btn" onclick="confirmPercentage()">Check</button>
+            </div>
+            <div id="confirmation-feedback"></div>
+        </div>
+        
+        <div class="card eligibility-card">
+            <h3 class="card-title">Your Current Eligibility Status</h3>
+            <p class="required-stat">Minimum Attendance Required: **75%**</p>
+            <p class="current-stat">Your Current Attendance: <strong id="current-percent">--%</strong></p>
+            
+            <div id="status-message" class="status-box">
+                <p>Status loading...</p>
+            </div>
+            
+            <div class="info-section">
+                <h4>Summary (Based on System Data)</h4>
+                <p>Classes Held: <span id="classes-held">0</span></p>
+                <p>Classes Attended: <span id="classes-attended">0</span></p>
+            </div>
+        </div>
+
+        <button class="logout-button">Log Out</button>
+    </main>
+
+    <script src="student1.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+body {
+    background-color: #5c4d5b; /* Dark background to mimic the video */
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: sans-serif;
+}
+
+#flowerCanvas {
+    /* Make the canvas fill the available space */
+    display: block; 
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1; /* Keep it below the button/text */
+}
+
+#addFlowerBtn {
+    /* Style for the 'Click to Add Flowers' text/button */
+    position: relative;
+    z-index: 2; 
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-top: -200px; /* Adjust as needed */
+}

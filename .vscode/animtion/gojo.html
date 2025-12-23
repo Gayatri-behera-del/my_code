@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satoru Gojo: Hollow Purple 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505; /* Deep darkness */
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            pointer-events: none;
+            z-index: 10;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(148, 0, 211, 0.8);
+        }
+        p {
+            font-size: 14px;
+            color: #aaa;
+        }
+        .signature {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #444;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h1>Hollow Purple</h1>
+        <p>Kyoshiki: Murasaki</p>
+    </div>
+    <div class="signature">Satoru Gojo Output</div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        
+        // 3D Camera settings
+        let angleX = 0;
+        let angleY = 0;
+        const focalLength = 400;
+
+        // Gojo's colors
+        const COLOR_RED = 'rgba(255, 50, 50, 0.8)';   // Reversal Red
+        const COLOR_BLUE = 'rgba(0, 200, 255, 0.8)';  // Lapse Blue
+        const COLOR_PURPLE = 'rgba(180, 0, 255, 1)';  // Hollow Purple
+        const COLOR_CORE = 'rgba(255, 255, 255, 0.9)'; // White core
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Mouse interaction for rotation
+        document.addEventListener('mousemove', (e) => {
+            angleY = (e.clientX / width - 0.5) * 2; // Rotate based on mouse X
+            angleX = (e.clientY / height - 0.5) * 2; // Rotate based on mouse Y
+        });
+
+        class Particle {
+            constructor(type) {
+                this.init(type);
+            }
+
+            init(type) {
+                this.type = type; // 'red', 'blue', 'purple'
+                
+                // Initialize position in 3D space
+                // Using spherical coordinates for a ball shape
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos((Math.random() * 2) - 1);
+                const radius = (Math.random() * 150) + 50;
+
+                this.x = radius * Math.sin(phi) * Math.cos(theta);
+                this.y = radius * Math.sin(phi) * Math.sin(theta);
+                this.z = radius * Math.cos(phi);
+
+                // Velocity logic
+                if (type === 'purple') {
+                    // Purple energy is chaotic and expands
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.vz = (Math.random() - 0.5) * 2;
+                    this.size = Math.random() * 4 + 1;
+                } else {
+                    // Red and Blue swirl
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.vz = 0;
+                    this.size = Math.random() * 2 + 0.5;
+                    this.orbitSpeed = (Math.random() * 0.05) + 0.02;
+                    this.orbitRadius = radius;
+                    this.orbitAngle = theta;
+                }
+            }
+
+            update() {
+                if (this.type === 'purple') {
+                    // Purple particles radiate outward slightly
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.z += this.vz;
+
+                    // Reset if too far
+                    if (Math.sqrt(this.x**2 + this.y**2 + this.z**2) > 400) {
+                        this.init('purple');
+                        this.x = 0; this.y = 0; this.z = 0; // Reset to center
+                    }
+                } else {
+                    // Orbit logic for Red and Blue
+                    this.orbitAngle += this.type === 'red' ? this.orbitSpeed : -this.orbitSpeed;
+                    
+                    // Complex swirl math
+                    this.x = this.orbitRadius * Math.cos(this.orbitAngle);
+                    this.z = this.orbitRadius * Math.sin(this.orbitAngle);
+                    // Add some wave to Y
+                    this.y += Math.sin(this.orbitAngle * 3) * 0.5;
+                }
+            }
+
+            draw(ctx) {
+                // 3D Rotation Math
+                // Rotate around Y
+                let x1 = this.x * Math.cos(angleY) - this.z * Math.sin(angleY);
+                let z1 = this.z * Math.cos(angleY) + this.x * Math.sin(angleY);
+
+                // Rotate around X
+                let y1 = this.y * Math.cos(angleX) - z1 * Math.sin(angleX);
+                let z2 = z1 * Math.cos(angleX) + this.y * Math.sin(angleX);
+
+                // Perspective Projection
+                // Objects further away are smaller and move closer to vanishing point
+                if (z2 > -focalLength) {
+                    let scale = focalLength / (focalLength + z2);
+                    let x2D = x1 * scale + width / 2;
+                    let y2D = y1 * scale + height / 2;
+
+                    // Determine Color
+                    let color;
+                    if (this.type === 'red') color = COLOR_RED;
+                    else if (this.type === 'blue') color = COLOR_BLUE;
+                    else color = COLOR_PURPLE;
+
+                    // Draw
+                    ctx.beginPath();
+                    ctx.arc(x2D, y2D, this.size * scale, 0, Math.PI * 2);
+                    ctx.fillStyle = color;
+                    
+                    // Add glow effect
+                    ctx.shadowBlur = 10 * scale;
+                    ctx.shadowColor = color;
+                    
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // Reset for performance
+                }
+            }
+        }
+
+        // Create Particles
+        function initParticles() {
+            particles = [];
+            // Create Red Swirl
+            for(let i=0; i<300; i++) particles.push(new Particle('red'));
+            // Create Blue Swirl
+            for(let i=0; i<300; i++) particles.push(new Particle('blue'));
+            // Create Purple Core Explosion
+            for(let i=0; i<200; i++) particles.push(new Particle('purple'));
+        }
+
+        function animate() {
+            // Trail effect (clearing with opacity)
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; 
+            ctx.fillRect(0, 0, width, height);
+
+            // Sort particles by Z depth so particles in front draw on top of particles in back
+            particles.sort((a, b) => b.z - a.z);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw(ctx);
+            });
+
+            // Draw the "Core" (The white singularity)
+            let coreScale = focalLength / (focalLength + 0); // z=0
+            ctx.beginPath();
+            ctx.arc(width/2, height/2, 15 * coreScale, 0, Math.PI * 2);
+            ctx.fillStyle = COLOR_CORE;
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = COLOR_PURPLE;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
+
+    </script>
+</body>
+</html>

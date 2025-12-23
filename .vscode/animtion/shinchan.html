@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shinchan 3D: The Chocobi Heist</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Comic Sans MS', sans-serif; }
+        #movie-container { position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 50px;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        button {
+            padding: 20px 50px;
+            font-size: 24px;
+            background: #ff4444;
+            color: white;
+            border: 4px solid white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
+            transition: transform 0.2s;
+        }
+        button:hover { transform: scale(1.1); }
+
+        .subtitle {
+            font-size: 28px;
+            color: yellow;
+            text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            text-align: center;
+            margin-bottom: 20px;
+            max-width: 80%;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        #title-card {
+            position: absolute;
+            top: 20%;
+            width: 100%;
+            text-align: center;
+            font-size: 60px;
+            color: #ff4444;
+            text-shadow: 4px 4px 0 #fff;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+    <!-- Import Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="movie-container">
+        <div id="start-screen">
+            <h1 style="color:white; margin-bottom: 20px; text-shadow: 2px 2px 0 red;">CRAYON SHIN-CHAN 3D</h1>
+            <button id="play-btn">START MOVIE</button>
+        </div>
+        
+        <div id="title-card">The Great Chocobi Heist</div>
+
+        <div id="ui-layer">
+            <div id="subtitle" class="subtitle"></div>
+        </div>
+    </div>
+
+<script>
+    // --- Audio System (Synthesized) ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const now = audioCtx.currentTime;
+
+        if (type === 'step') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'shock') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'happy') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'angry') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(80, now + 0.5);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+    }
+
+    // --- Three.js Setup ---
+    const container = document.getElementById('movie-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue
+    // Add fog for depth
+    scene.fog = new THREE.Fog(0x87CEEB, 10, 50);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // Lighting
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    scene.add(dirLight);
+
+    // Floor
+    const floorGeo = new THREE.PlaneGeometry(100, 100);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0xf4e4bc });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Wall
+    const wallGeo = new THREE.PlaneGeometry(100, 20);
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.set(0, 10, -10);
+    wall.receiveShadow = true;
+    scene.add(wall);
+    
+    // Baseboard
+    const baseGeo = new THREE.BoxGeometry(100, 1, 0.5);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    base.position.set(0, 0.5, -9.8);
+    scene.add(base);
+
+    // --- Character Construction ---
+
+    function createShinchan() {
+        const group = new THREE.Group();
+
+        // Materials
+        const skinMat = new THREE.MeshToonMaterial({ color: 0xffdec7 }); // Pale Peach
+        const shirtMat = new THREE.MeshToonMaterial({ color: 0xff0000 }); // Red
+        const shortsMat = new THREE.MeshToonMaterial({ color: 0xffff00 }); // Yellow
+        const socksMat = new THREE.MeshToonMaterial({ color: 0xffffff }); // White
+        const shoeMat = new THREE.MeshToonMaterial({ color: 0xffcc00 }); // Dark Yellow
+        const blackMat = new THREE.MeshToonMaterial({ color: 0x000000 });
+        const whiteMat = new THREE.MeshToonMaterial({ color: 0xffffff });
+
+        // 1. Head (The Potato)
+        // We use a sphere and scale it non-uniformly
+        const headGeo = new THREE.SphereGeometry(1.6, 32, 32);
+        const head = new THREE.Mesh(headGeo, skinMat);
+        head.scale.set(1.1, 1, 1); // Widen face
+        head.position.y = 3.8;
+        head.castShadow = true;
+        group.add(head);
+
+        // 2. Hair
+        const hairGeo = new THREE.SphereGeometry(1.65, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.4);
+        const hair = new THREE.Mesh(hairGeo, blackMat);
+        hair.position.y = 3.8;
+        hair.rotation.x = -Math.PI / 6; // Tilt back
+        group.add(hair);
+
+        // 3. Eyebrows (The Signature Feature)
+        const browGeo = new THREE.CapsuleGeometry(0.2, 0.8, 4, 8);
+        const browL = new THREE.Mesh(browGeo, blackMat);
+        browL.position.set(-0.6, 4.5, 1.4);
+        browL.rotation.z = Math.PI / 4;
+        browL.rotation.x = -Math.PI / 6;
+        
+        const browR = new THREE.Mesh(browGeo, blackMat);
+        browR.position.set(0.6, 4.5, 1.4);
+        browR.rotation.z = -Math.PI / 4;
+        browR.rotation.x = -Math.PI / 6;
+        group.add(browL);
+        group.add(browR);
+
+        // 4. Eyes
+        const eyeGeo = new THREE.SphereGeometry(0.35, 16, 16);
+        const eyeL = new THREE.Mesh(eyeGeo, whiteMat);
+        eyeL.position.set(-0.5, 4.0, 1.45);
+        const eyeR = new THREE.Mesh(eyeGeo, whiteMat);
+        eyeR.position.set(0.5, 4.0, 1.45);
+        
+        const pupilGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const pupilL = new THREE.Mesh(pupilGeo, blackMat);
+        pupilL.position.set(0, 0, 0.3);
+        eyeL.add(pupilL);
+        const pupilR = new THREE.Mesh(pupilGeo, blackMat);
+        pupilR.position.set(0, 0, 0.3);
+        eyeR.add(pupilR);
+
+        group.add(eyeL);
+        group.add(eyeR);
+
+        // 5. Body (Shirt)
+        const bodyGeo = new THREE.CylinderGeometry(1.2, 1.4, 2, 32);
+        const body = new THREE.Mesh(bodyGeo, shirtMat);
+        body.position.y = 2.2;
+        body.castShadow = true;
+        group.add(body);
+
+        // 6. Shorts
+        const shortsGeo = new THREE.CylinderGeometry(1.45, 1.45, 1, 32);
+        const shorts = new THREE.Mesh(shortsGeo, shortsMat);
+        shorts.position.y = 1.0;
+        shorts.castShadow = true;
+        group.add(shorts);
+
+        // 7. Legs & Socks & Shoes
+        const legGeo = new THREE.CylinderGeometry(0.3, 0.3, 1.2, 16);
+        
+        // Left Leg Group
+        const legLGroup = new THREE.Group();
+        legLGroup.position.set(-0.6, 1.0, 0);
+        const legL = new THREE.Mesh(legGeo, skinMat);
+        legL.position.y = -0.6;
+        legLGroup.add(legL);
+        
+        const sockL = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.4, 16), socksMat);
+        sockL.position.y = -1.0;
+        legLGroup.add(sockL);
+
+        const shoeL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.8), shoeMat);
+        shoeL.position.set(0, -1.35, 0.1);
+        legLGroup.add(shoeL);
+        group.add(legLGroup);
+
+        // Right Leg Group
+        const legRGroup = new THREE.Group();
+        legRGroup.position.set(0.6, 1.0, 0);
+        const legR = new THREE.Mesh(legGeo, skinMat);
+        legR.position.y = -0.6;
+        legRGroup.add(legR);
+
+        const sockR = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.4, 16), socksMat);
+        sockR.position.y = -1.0;
+        legRGroup.add(sockR);
+
+        const shoeR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.8), shoeMat);
+        shoeR.position.set(0, -1.35, 0.1);
+        legRGroup.add(shoeR);
+        group.add(legRGroup);
+
+        // 8. Arms
+        const armGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.2, 16);
+        
+        const armLGroup = new THREE.Group();
+        armLGroup.position.set(-1.3, 2.8, 0);
+        const armL = new THREE.Mesh(armGeo, skinMat);
+        armL.rotation.z = Math.PI / 8;
+        armL.position.y = -0.4;
+        armLGroup.add(armL);
+        // Sleeve
+        const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 0.5, 16), shirtMat);
+        sleeveL.rotation.z = Math.PI / 8;
+        sleeveL.position.y = 0.1;
+        armLGroup.add(sleeveL);
+        group.add(armLGroup);
+
+        const armRGroup = new THREE.Group();
+        armRGroup.position.set(1.3, 2.8, 0);
+        const armR = new THREE.Mesh(armGeo, skinMat);
+        armR.rotation.z = -Math.PI / 8;
+        armR.position.y = -0.4;
+        armRGroup.add(armR);
+        // Sleeve
+        const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 0.5, 16), shirtMat);
+        sleeveR.rotation.z = -Math.PI / 8;
+        sleeveR.position.y = 0.1;
+        armRGroup.add(sleeveR);
+        group.add(armRGroup);
+
+        // Store references for animation
+        group.userData = { 
+            legL: legLGroup, legR: legRGroup, 
+            armL: armLGroup, armR: armRGroup,
+            head: head, body: body
+        };
+
+        return group;
+    }
+
+    function createChocobi() {
+        const group = new THREE.Group();
+        // Hexagonal Prism
+        const geo = new THREE.CylinderGeometry(1, 1, 2.5, 6);
+        const mat = new THREE.MeshToonMaterial({ color: 0x66CDAA }); // Green
+        const box = new THREE.Mesh(geo, mat);
+        box.castShadow = true;
+        group.add(box);
+
+        // Star (Pink sphere for simplicity in procedural)
+        const starGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const starMat = new THREE.MeshToonMaterial({ color: 0xff69b4 });
+        const star = new THREE.Mesh(starGeo, starMat);
+        star.position.set(0, 0, 0.8);
+        star.scale.set(1, 1, 0.2); // Flatten it
+        group.add(star);
+
+        return group;
+    }
+
+    function createMisaeHead() {
+        const group = new THREE.Group();
+        // Hair
+        const hairMat = new THREE.MeshToonMaterial({ color: 0x553311 });
+        const hairGeo = new THREE.SphereGeometry(2.5, 32, 32);
+        const hair = new THREE.Mesh(hairGeo, hairMat);
+        group.add(hair);
+
+        // Face
+        const faceMat = new THREE.MeshToonMaterial({ color: 0xffdec7 });
+        const faceGeo = new THREE.BoxGeometry(2, 2.5, 1.5);
+        const face = new THREE.Mesh(faceGeo, faceMat);
+        face.position.z = 1.5;
+        group.add(face);
+
+        // Angry Eyes (Glowing White)
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const eyeGeo = new THREE.PlaneGeometry(0.8, 0.8);
+        const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeL.position.set(-0.5, 0, 2.3);
+        eyeL.rotation.z = Math.PI / 4; // Diamond shape (angry)
+        
+        const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeR.position.set(0.5, 0, 2.3);
+        eyeR.rotation.z = Math.PI / 4;
+
+        group.add(eyeL);
+        group.add(eyeR);
+        return group;
+    }
+
+    // --- Init Scene Objects ---
+    const shinchan = createShinchan();
+    shinchan.position.set(-10, 0, 0); // Start off screen
+    scene.add(shinchan);
+
+    const chocobi = createChocobi();
+    chocobi.position.set(2, 1.25, 0);
+    chocobi.visible = false;
+    scene.add(chocobi);
+
+    const misae = createMisaeHead();
+    misae.position.set(-15, 6, 0); // Hidden initially
+    misae.visible = false;
+    scene.add(misae);
+
+    // --- Animation Logic ---
+    let isPlaying = false;
+    let startTime = 0;
+    let clock = new THREE.Clock();
+
+    const subtitleEl = document.getElementById('subtitle');
+    const titleCard = document.getElementById('title-card');
+    const startScreen = document.getElementById('start-screen');
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+
+        if (!isPlaying) return;
+
+        const time = clock.getElapsedTime();
+        const parts = shinchan.userData;
+
+        // --- Sequence Control ---
+        
+        // 0-3s: Title
+        if (time < 3) {
+            titleCard.style.display = 'block';
+            camera.position.set(0, 5, 15);
+            camera.lookAt(0, 2, 0);
+            return;
+        } else {
+            titleCard.style.display = 'none';
+        }
+
+        const sceneTime = time - 3; // Time relative to start of action
+
+        // 3s - 7s: Walk In
+        if (sceneTime < 4) {
+            subtitleEl.style.display = 'block';
+            subtitleEl.textContent = "*Sneaking in...*";
+            
+            // Movement
+            shinchan.position.x = -8 + (sceneTime * 2); // Move right
+            shinchan.rotation.y = Math.PI / 2; // Face right
+            
+            // Walk Cycle
+            parts.legL.rotation.x = Math.sin(time * 10) * 0.5;
+            parts.legR.rotation.x = Math.cos(time * 10) * 0.5;
+            parts.armL.rotation.x = -Math.sin(time * 10) * 0.5;
+            parts.armR.rotation.x = -Math.cos(time * 10) * 0.5;
+            
+            // Sound trigger logic (crude)
+            if (Math.floor(time * 10) % 5 === 0) playSound('step');
+        } 
+        // 7s - 10s: Discovery
+        else if (sceneTime < 7) {
+            chocobi.visible = true;
+            shinchan.position.x = 0;
+            shinchan.rotation.y = 0; // Face camera
+            
+            // Reset limbs
+            parts.legL.rotation.x = 0; parts.legR.rotation.x = 0;
+
+            // Look at chocobi
+            shinchan.rotation.y = -Math.PI / 4; // Face slight left towards Chocobi
+            
+            if (sceneTime > 4.1 && sceneTime < 4.2) playSound('shock');
+            subtitleEl.textContent = "Shinchan: Ooh! The legendary Chocobi!";
+        }
+        // 10s - 15s: Dance
+        else if (sceneTime < 12) {
+            subtitleEl.textContent = "Shinchan: Time for the boogie-woogie!";
+            
+            // Camera Zoom
+            camera.position.z = 10;
+            
+            // Dance Animation (Action Kamen Style)
+            shinchan.rotation.y = 0;
+            shinchan.position.y = Math.abs(Math.sin(time * 8)) * 0.5; // Jump
+            
+            // Hips wiggle (Rotate whole body)
+            shinchan.rotation.z = Math.sin(time * 15) * 0.2;
+            
+            // Arms wave
+            parts.armL.rotation.z = Math.PI/2 + Math.sin(time * 15);
+            parts.armR.rotation.z = -Math.PI/2 + Math.cos(time * 15);
+
+            if (Math.floor(time * 10) % 8 === 0) playSound('happy');
+        }
+        // 15s - 18s: Misae Enters
+        else if (sceneTime < 15) {
+            misae.visible = true;
+            subtitleEl.style.color = 'red';
+            subtitleEl.textContent = "Misae: SHINNOSUKE!!!";
+            
+            // Camera shake
+            camera.position.x = Math.random() * 0.5;
+            camera.position.y = 5 + Math.random() * 0.5;
+
+            // Shinchan Frozen
+            shinchan.rotation.z = 0;
+            shinchan.position.y = 0;
+            parts.armL.rotation.z = Math.PI; // Hands up surrender
+            parts.armR.rotation.z = -Math.PI;
+
+            if (sceneTime > 12.1 && sceneTime < 12.2) playSound('angry');
+        }
+        // 18s+: Chase
+        else {
+            subtitleEl.style.color = 'yellow';
+            subtitleEl.textContent = "Shinchan: Help me Action Kamen!!";
+            
+            // Benny Hill Chase logic
+            const runSpeed = 10;
+            const runX = Math.sin(time * 2) * 8;
+            
+            shinchan.position.x = runX;
+            shinchan.rotation.y = Math.cos(time * 2) > 0 ? Math.PI/2 : -Math.PI/2;
+            
+            // Fast Run Cycle
+            parts.legL.rotation.x = Math.sin(time * 20) * 1.0;
+            parts.legR.rotation.x = Math.cos(time * 20) * 1.0;
+            
+            // Misae floating behind
+            misae.position.x = runX - (Math.cos(time*2) > 0 ? 3 : -3);
+            misae.position.y = 4 + Math.sin(time*5);
+            misae.lookAt(shinchan.position);
+            
+            if (Math.floor(time * 10) % 4 === 0) playSound('step');
+        }
+    }
+
+    // --- Handlers ---
+    document.getElementById('play-btn').addEventListener('click', () => {
+        initAudio();
+        startScreen.style.display = 'none';
+        isPlaying = true;
+        clock.start();
+        animate();
+    });
+
+    // Resize Handler
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage to the Unknown - 2D Animation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050510; /* Deep space black */
+        }
+        canvas {
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Courier New', Courier, monospace;
+            pointer-events: none;
+            z-index: 10;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+        .cinematic-bar {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 10%;
+            background-color: black;
+            z-index: 5;
+            pointer-events: none;
+        }
+        #top-bar { top: 0; }
+        #bottom-bar { bottom: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <h1>Voyage to the Unknown</h1>
+        <p>Director: Sweety | Mouse/Touch to Steer</p>
+    </div>
+
+    <!-- Cinematic Bars for "Movie" feel -->
+    <div id="top-bar" class="cinematic-bar"></div>
+    <div id="bottom-bar" class="cinematic-bar"></div>
+
+    <canvas id="movieCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('movieCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    
+    // Game/Movie State
+    let frameCount = 0;
+    const particles = [];
+    const stars = [];
+    const planets = [];
+    
+    // Mouse/Touch interaction
+    const mouse = { x: 0, y: 0 };
+    
+    // Rocket Object
+    const rocket = {
+        x: 100,
+        y: 0, // Will be set in resize
+        targetY: 0,
+        width: 60,
+        height: 30,
+        color: '#e0e0e0',
+        windowColor: '#87CEEB',
+        finColor: '#ff4444'
+    };
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        
+        // Center rocket initially if not set
+        if (rocket.y === 0) {
+            rocket.y = height / 2;
+            rocket.targetY = height / 2;
+            mouse.y = height / 2;
+        }
+    }
+
+    window.addEventListener('resize', resize);
+    
+    // Mouse Move
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+    });
+
+    // Touch Move
+    window.addEventListener('touchmove', (e) => {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+        e.preventDefault(); // Prevent scrolling
+    }, { passive: false });
+
+    // --- Classes ---
+
+    class Star {
+        constructor() {
+            this.reset(true);
+        }
+
+        reset(randomX = false) {
+            this.x = randomX ? Math.random() * width : width + 10;
+            this.y = Math.random() * height;
+            // Parallax: smaller stars are slower (further away)
+            this.size = Math.random() * 2 + 0.5; 
+            this.speed = this.size * 1.5; 
+            this.brightness = Math.random();
+            this.twinkleSpeed = Math.random() * 0.05;
+        }
+
+        update() {
+            this.x -= this.speed;
+            this.brightness += this.twinkleSpeed;
+            if (this.brightness > 1 || this.brightness < 0.3) {
+                this.twinkleSpeed *= -1;
+            }
+            
+            if (this.x < 0) {
+                this.reset();
+            }
+        }
+
+        draw() {
+            ctx.globalAlpha = this.brightness;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 2 - 4; // Move left generally
+            this.vy = (Math.random() - 0.5) * 2;
+            this.life = 1.0;
+            this.decay = Math.random() * 0.03 + 0.01;
+            this.color = `hsl(${Math.random() * 40 + 10}, 100%, 50%)`; // Orange/Red/Yellow
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= this.decay;
+        }
+
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, Math.random() * 3 + 1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    class Planet {
+        constructor() {
+            this.reset(true);
+        }
+
+        reset(initial = false) {
+            this.radius = Math.random() * 80 + 20;
+            this.x = initial ? Math.random() * width + width : width + this.radius + Math.random() * 500;
+            this.y = Math.random() * (height - 200) + 100;
+            this.speed = (150 / this.radius) * 0.5; // Bigger planets move slower (illusion of distance)
+            
+            // Colors
+            const hues = [200, 280, 350, 40, 160]; // Blue, Purple, Red, Gold, Green
+            const hue = hues[Math.floor(Math.random() * hues.length)];
+            this.color = `hsl(${hue}, 60%, 40%)`;
+            this.detailColor = `hsl(${hue}, 70%, 30%)`;
+            this.hasRings = Math.random() > 0.7;
+        }
+
+        update() {
+            this.x -= this.speed;
+            if (this.x < -this.radius - 100) {
+                this.reset();
+            }
+        }
+
+        draw() {
+            // Planet Body
+            const grad = ctx.createRadialGradient(
+                this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.1,
+                this.x, this.y, this.radius
+            );
+            grad.addColorStop(0, this.color);
+            grad.addColorStop(1, '#000000'); // Shadow side
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Rings
+            if (this.hasRings) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(Math.PI / 8);
+                ctx.scale(1, 0.3);
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 1.8, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 10;
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 1.6, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+    }
+
+    // --- Init ---
+    resize();
+    
+    // Create Stars
+    for(let i=0; i<200; i++) {
+        stars.push(new Star());
+    }
+
+    // Create Planets
+    for(let i=0; i<3; i++) {
+        planets.push(new Planet());
+    }
+
+    // --- Main Loop ---
+    function animate() {
+        // Clear background with trail effect (optional, simplified here)
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, width, height);
+
+        // Update & Draw Stars
+        stars.forEach(star => {
+            star.update();
+            star.draw();
+        });
+
+        // Update & Draw Planets (Background)
+        // Sort planets by speed so slower (further) ones draw first
+        planets.sort((a,b) => a.speed - b.speed);
+        planets.forEach(planet => {
+            planet.update();
+            planet.draw();
+        });
+
+        // Update Rocket Position (Smooth follow mouse)
+        // Lerp (Linear Interpolation) for smoothness
+        rocket.targetY = mouse.y;
+        
+        // Clamp rocket within cinematic bars
+        const topLimit = height * 0.15;
+        const bottomLimit = height * 0.85;
+        if (rocket.targetY < topLimit) rocket.targetY = topLimit;
+        if (rocket.targetY > bottomLimit) rocket.targetY = bottomLimit;
+
+        rocket.y += (rocket.targetY - rocket.y) * 0.1;
+
+        // Draw Rocket
+        ctx.save();
+        ctx.translate(rocket.x, rocket.y);
+        
+        // Tilt rocket based on movement
+        const tilt = (rocket.targetY - rocket.y) * 0.005;
+        ctx.rotate(tilt);
+
+        // Engine Fire Particles
+        for(let i=0; i<5; i++) {
+            particles.push(new Particle(-30, 0)); // Emit from back of rocket
+        }
+
+        // Draw Rocket Body
+        ctx.fillStyle = rocket.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 40, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Fins
+        ctx.fillStyle = rocket.finColor;
+        ctx.beginPath();
+        ctx.moveTo(-20, 0);
+        ctx.lineTo(-40, -20);
+        ctx.lineTo(-10, 0);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(-20, 0);
+        ctx.lineTo(-40, 20);
+        ctx.lineTo(-10, 0);
+        ctx.fill();
+
+        // Window
+        ctx.fillStyle = rocket.windowColor;
+        ctx.beginPath();
+        ctx.arc(15, -5, 5, 0, Math.PI * 2);
+        ctx.fill();
+        // Window Reflection
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(16, -6, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+
+        // Update & Draw Particles (Exhaust)
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            // Move particles relative to rocket
+            p.update();
+            
+            // Adjust particle draw position based on rocket
+            ctx.save();
+            ctx.translate(rocket.x, rocket.y);
+            const tilt = (rocket.targetY - rocket.y) * 0.005;
+            ctx.rotate(tilt);
+            
+            // Draw relative to rocket center
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.random() * 4 + 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+            
+            ctx.restore();
+
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+        
+        // Add Cinematic "Vignette" or overlay effects here if desired
+        // But the CSS bars handle the framing nicely.
+
+        frameCount++;
+        requestAnimationFrame(animate);
+    }
+
+    // Start
+    animate();
+
+</script>
+</body>
+</html>

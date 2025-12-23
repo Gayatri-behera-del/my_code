@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance & Eligibility Portal</title>
+    <link rel="stylesheet" href="student.css">
+</head>
+<body>
+    <header>
+        <h1>SmartAttend College Portal</h1>
+        <p>Welcome, <span id="student-name">Gayatri Behera</span> (Roll No: MCA/28)</p>
+    </header>
+
+    <main>
+        <h2>Exam Eligibility Check</h2>
+
+        <div class="eligibility-card">
+            <p class="required-stat">Minimum Attendance Required: **75%**</p>
+            <p class="current-stat">Your Current Attendance: <strong id="current-percent">--%</strong></p>
+            
+            <div id="status-message" class="status-box">
+                <p>Loading your eligibility status...</p>
+            </div>
+            
+            <div class="info-section">
+                <h3>Attendance Summary</h3>
+                <p>Classes Held: <span id="classes-held">0</span></p>
+                <p>Classes Attended: <span id="classes-attended">0</span></p>
+            </div>
+        </div>
+
+        <button class="logout-button">Log Out</button>
+    </main>
+
+    <script src="student.js"></script>
+</body>
+</html>

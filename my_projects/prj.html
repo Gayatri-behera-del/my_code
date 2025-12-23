@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jan Seva Setu (Scheme Finder)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Font: Inter & Noto Sans Oriya -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Oriya:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Styles for the Chat Interface (Civic Tech Theme) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+        }
+        .chat-container {
+            height: calc(100vh - 12rem); /* Full height minus header/input */
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .user-message {
+            background-color: #10b981; /* Emerald 500 */
+            color: white;
+            border-radius: 1rem 1rem 0 1rem;
+            max-width: 85%;
+        }
+        .bot-message {
+            background-color: #334155; /* Slate 700 */
+            color: #f8fafc;
+            border-radius: 1rem 1rem 1rem 0;
+            max-width: 85%;
+        }
+        /* Style for Odia text for better display */
+        .odia-text {
+            font-family: 'Noto Sans Oriya', sans-serif;
+            font-weight: 600;
+        }
+        .mic-button {
+            transition: transform 0.1s;
+        }
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <!-- Main Application Card -->
+    <div id="app-card" class="w-full max-w-lg bg-slate-800 shadow-2xl rounded-xl flex flex-col overflow-hidden min-h-[90vh]">
+
+        <!-- Header -->
+        <header class="bg-slate-700 p-4 shadow-md flex justify-between items-center text-white sticky top-0 z-10">
+            <h1 class="text-2xl font-bold text-emerald-400">
+                <i class="fa-solid fa-handshake mr-2"></i> Jan Seva Setu
+            </h1>
+            <div class="flex space-x-2">
+                <!-- NEW FEATURE: Simplify Document -->
+                <button id="simplify-toggle" class="text-sm px-3 py-1 bg-purple-600 rounded-full hover:bg-purple-500 transition">
+                    ✨ Simplify Document
+                </button>
+                <button id="profile-toggle" class="text-sm px-3 py-1 bg-slate-600 rounded-full hover:bg-slate-500 transition">
+                    <i class="fa-solid fa-user-gear mr-1"></i> Edit Profile
+                </button>
+            </div>
+        </header>
+
+        <!-- Profile Setup Modal (Hidden by default) -->
+        <div id="profile-modal" class="fixed inset-0 bg-black bg-opacity-75 z-20 flex items-center justify-center hidden">
+            <div class="bg-slate-700 p-6 rounded-xl shadow-2xl w-full max-w-sm">
+                <h2 class="text-xl font-bold text-emerald-400 mb-4">Your Eligibility Profile</h2>
+                <div class="space-y-4 text-slate-200">
+                    <div>
+                        <label for="user-age" class="block text-sm font-medium mb-1">Age</label>
+                        <input type="number" id="user-age" value="35" class="w-full p-2 bg-slate-600 border border-slate-500 rounded text-white focus:ring-emerald-400 focus:border-emerald-400">
+                    </div>
+                    <div>
+                        <label for="user-occupation" class="block text-sm font-medium mb-1">Occupation</label>
+                        <select id="user-occupation" class="w-full p-2 bg-slate-600 border border-slate-500 rounded text-white focus:ring-emerald-400 focus:border-emerald-400">
+                            <option value="Farmer">Farmer (କୃଷକ)</option>
+                            <option value="Laborer">Daily Wage Laborer (ଶ୍ରମିକ)</option>
+                            <option value="Student">Student (ଛାତ୍ର)</option>
+                            <option value="Unemployed">Unemployed (ବେକାର)</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="user-district" class="block text-sm font-medium mb-1">District (Northern Zone)</label>
+                        <select id="user-district" class="w-full p-2 bg-slate-600 border border-slate-500 rounded text-white focus:ring-emerald-400 focus:border-emerald-400">
+                            <option value="Mayurbhanj">Mayurbhanj</option>
+                            <option value="Keonjhar">Keonjhar</option>
+                            <option value="Angul">Angul</option>
+                            <option value="Balasore">Balasore</option>
+                            <option value="Bhadrak">Bhadrak</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="save-profile" class="mt-6 w-full py-2 bg-emerald-500 hover:bg-emerald-600 rounded text-white font-semibold transition">
+                    Save Profile
+                </button>
+            </div>
+        </div>
+
+        <!-- NEW: Document Simplifier Modal -->
+        <div id="simplify-modal" class="fixed inset-0 bg-black bg-opacity-75 z-20 flex items-center justify-center hidden">
+            <div class="bg-slate-700 p-6 rounded-xl shadow-2xl w-full max-w-lg">
+                <h2 class="text-xl font-bold text-purple-400 mb-4 flex items-center">
+                    <i class="fa-solid fa-book-open-reader mr-2"></i> Document Simplifier
+                </h2>
+                <textarea id="text-to-simplify" rows="6" placeholder="Paste the complex legal or government text here..." class="w-full p-3 bg-slate-600 border border-slate-500 rounded text-white focus:outline-none focus:ring-purple-400 focus:border-purple-400"></textarea>
+                
+                <button id="run-simplifier" class="mt-4 w-full py-2 bg-purple-500 hover:bg-purple-600 rounded text-white font-semibold transition">
+                    ✨ Simplify Text (Odia & English)
+                </button>
+                
+                <button id="close-simplifier" class="mt-2 w-full py-1 text-sm text-slate-400 hover:text-white transition">
+                    Close
+                </button>
+                
+                <div id="simplifier-output-container" class="mt-4 hidden">
+                    <p class="text-sm font-semibold text-purple-400 mb-2">Simplified Result:</p>
+                    <div id="simplifier-output" class="p-3 bg-slate-800 rounded text-sm text-slate-200 whitespace-pre-wrap">
+                        <!-- Simplifier output will appear here -->
+                    </div>
+                </div>
+
+                <div id="simplifier-loading" class="text-center p-3 text-purple-400 hidden">
+                    <i class="fa-solid fa-spinner fa-spin mr-2"></i> Simplifying document...
+                </div>
+            </div>
+        </div>
+        <!-- END: Document Simplifier Modal -->
+
+        <!-- Chat Area -->
+        <div id="chat-container" class="chat-container p-4 flex flex-col space-y-4">
+            <!-- Initial Welcome Message -->
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="text-center p-3 text-emerald-400 hidden">
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i> Analyzing eligibility...
+        </div>
+
+        <!-- Input Area (Sticky at the bottom) -->
+        <div class="p-4 bg-slate-700 border-t border-slate-600 sticky bottom-0 z-10">
+            <div class="flex items-center space-x-3">
+                <input type="text" id="user-input" placeholder="Type your query in English or Odia..." class="flex-grow p-3 bg-slate-600 text-white rounded-full border border-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                <button id="send-button" class="mic-button w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center text-xl shadow-lg transition">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+                <button id="voice-button" class="mic-button w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center text-xl shadow-lg transition">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+            </div>
+            <p id="voice-mock-message" class="text-sm text-slate-400 mt-2 text-center hidden">
+                <i class="fa-solid fa-volume-high mr-1"></i> (Voice input simulated: Click the microphone to generate a sample question.)
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL CONFIG & INITIALIZATION ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-jan-seva-setu';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        setLogLevel('debug'); // Enable Firestore logs
+
+        let app, db, auth, userId = null;
+
+        // Mock API Key (Will be provided by Canvas runtime)
+        const apiKey = "";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // UI Elements
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const voiceButton = document.getElementById('voice-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const profileModal = document.getElementById('profile-modal');
+        const profileToggle = document.getElementById('profile-toggle');
+        const saveProfile = document.getElementById('save-profile');
+        
+        // New Simplifier Elements
+        const simplifyModal = document.getElementById('simplify-modal');
+        const simplifyToggle = document.getElementById('simplify-toggle');
+        const closeSimplifier = document.getElementById('close-simplifier');
+        const runSimplifier = document.getElementById('run-simplifier');
+        const textToSimplify = document.getElementById('text-to-simplify');
+        const simplifierOutput = document.getElementById('simplifier-output');
+        const simplifierOutputContainer = document.getElementById('simplifier-output-container');
+        const simplifierLoading = document.getElementById('simplifier-loading');
+
+
+        // Profile state
+        let userProfile = {
+            age: 35,
+            occupation: 'Farmer',
+            district: 'Mayurbhanj'
+        };
+
+        // --- UTILITY FUNCTIONS ---
+
+        function displayMessage(role, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            messageDiv.innerHTML = `
+                <div class="${role}-message p-3 shadow-lg text-sm">
+                    ${formatMessageContent(text)}
+                </div>
+            `;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function formatMessageContent(text) {
+            // Check if the response contains Odia text in parentheses for custom formatting
+            const odiaMatch = text.match(/\((.*?)\)/);
+            if (odiaMatch) {
+                // Split the text to format the Odia part specifically
+                const [fullMatch, odiaContent] = odiaMatch;
+                const formattedOdia = `<span class="odia-text">${odiaContent}</span>`;
+                return text.replace(fullMatch, formattedOdia);
+            }
+            return text;
+        }
+
+        function getSchemeDatabaseContext() {
+            // Mock scheme data relevant to Northern Odisha, formatted for the AI to process.
+            return `
+                -- Eligibility Data --
+                1. KALIA Yojana: Eligibility: Farmer, Age 20-60. Benefit: Financial aid for cultivation.
+                2. Balram Yojana: Eligibility: Farmer, Small/Marginal landholder. Benefit: Agricultural credit/loan.
+                3. ITDA Scheme: Eligibility: Tribal/ST, District: Keonjhar or Mayurbhanj. Benefit: Tribal development grants.
+                4. Mo Ghara Scheme: Eligibility: Unemployed/Laborer, Low Income, No Pucca House. Benefit: Housing Subsidy.
+                5. Fishery Grant: Eligibility: Occupation: Fisher, District: Balasore or Bhadrak. Benefit: Grants for fishing gear.
+                -- End Data --
+            `;
+        }
+
+        function updateProfileUI() {
+            document.getElementById('user-age').value = userProfile.age;
+            document.getElementById('user-occupation').value = userProfile.occupation;
+            document.getElementById('user-district').value = userProfile.district;
+            profileToggle.textContent = `User: ${userProfile.occupation}, ${userProfile.district}`;
+        }
+
+        // --- FIREBASE LOGIC ---
+
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                await new Promise((resolve, reject) => {
+                    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                        unsubscribe();
+                        if (user) {
+                            userId = user.uid;
+                            console.log("Firebase Auth successful. User ID:", userId);
+                            resolve();
+                        } else if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    });
+                });
+                
+                userId = auth.currentUser.uid;
+                loadUserProfile();
+                loadChatHistory();
+                
+            } catch (error) {
+                console.error("Firebase Initialization or Auth Failed:", error);
+                displayMessage('bot', 'Error connecting to the database. Chat history will not be saved.');
+            }
+        }
+
+        function loadUserProfile() {
+            const userProfileRef = doc(db, 'artifacts', appId, 'users', userId, 'config', 'profile');
+            onSnapshot(userProfileRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    userProfile = docSnap.data();
+                    console.log("Profile loaded:", userProfile);
+                } else {
+                    console.log("No profile found, using defaults.");
+                }
+                updateProfileUI();
+                if (chatContainer.children.length === 0) {
+                    displayWelcomeMessage();
+                }
+            }, (error) => {
+                console.error("Error loading profile:", error);
+            });
+        }
+
+        async function saveProfileData() {
+            // FIX: Ensure userId is set before attempting Firestore operations
+            if (!userId) {
+                console.error("Firestore not ready: userId is null. Please wait for authentication.");
+                displayMessage('bot', "The application is still initializing. Please wait a moment and try saving your profile again.");
+                return;
+            }
+
+            userProfile = {
+                age: parseInt(document.getElementById('user-age').value),
+                occupation: document.getElementById('user-occupation').value,
+                district: document.getElementById('user-district').value
+            };
+
+            const userProfileRef = doc(db, 'artifacts', appId, 'users', userId, 'config', 'profile');
+            try {
+                await setDoc(userProfileRef, userProfile, { merge: true });
+                console.log("Profile saved successfully.");
+                profileModal.classList.add('hidden');
+                updateProfileUI();
+            } catch (e) {
+                console.error("Error saving profile:", e);
+                // FIX: Replaced alert() with displayMessage() for iframe compatibility
+                displayMessage('bot', "Could not save profile. Check the browser console for specific error details.");
+            }
+        }
+
+        function loadChatHistory() {
+            if (!userId) return;
+
+            const chatCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'seva_setu_history');
+            const q = query(chatCollectionRef, orderBy('timestamp', 'asc'));
+
+            onSnapshot(q, (snapshot) => {
+                chatContainer.innerHTML = ''; // Clear existing messages
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    displayMessage(data.role, data.text);
+                });
+                if (snapshot.empty) {
+                    displayWelcomeMessage();
+                }
+            }, (error) => {
+                console.error("Error loading chat history:", error);
+                // Fallback to displaying welcome message if history fails
+                if (chatContainer.children.length === 0) {
+                    displayWelcomeMessage();
+                }
+            });
+        }
+
+        async function saveMessage(role, text) {
+            if (!userId) return;
+            try {
+                const chatCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'seva_setu_history');
+                await addDoc(chatCollectionRef, {
+                    role: role,
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        }
+
+        function displayWelcomeMessage() {
+            const message = `Namaskar! I am Setu, your AI scheme assistant. Please tell me what kind of scheme you are looking for. I currently know that you are a **${userProfile.occupation}** from **${userProfile.district}** (Age: ${userProfile.age}). You can change this profile anytime by clicking 'Edit Profile'.`;
+            displayMessage('bot', message);
+        }
+
+        // --- GEMINI AI CORE LOGIC (Scheme Finder) ---
+
+        async function getGeminiResponse(userText) {
+            loadingIndicator.classList.remove('hidden');
+            sendButton.disabled = true;
+            voiceButton.disabled = true;
+
+            const userPrompt = `The user query is: "${userText}"`;
+            
+            // System Instruction for Scheme Matching
+            const systemInstruction = `You are 'Setu', an expert government scheme eligibility assistant in Odisha. Your role is to analyze a user's profile and their natural language query to find relevant schemes. 
+                -- Rules:
+                1. Respond ONLY by listing up to three eligible schemes, and provide a brief, one-sentence description for each **in Odia**, followed immediately by the English translation in parentheses.
+                2. If no schemes are found, state that briefly in Odia.
+                3. Use the Scheme Data below to match schemes based on the current user profile.
+                -- Current User Profile: Age: ${userProfile.age}, Occupation: ${userProfile.occupation}, District: ${userProfile.district}.
+                ${getSchemeDatabaseContext()}
+            `;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+            };
+
+            // Simple retry mechanism with exponential backoff
+            const maxRetries = 3;
+            let currentDelay = 1000;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't find a response.";
+                        
+                        saveMessage('bot', text);
+                        displayMessage('bot', text);
+                        return; // Success, exit the function
+                    } else if (response.status === 429) {
+                        // Rate limit error, retry
+                        if (i < maxRetries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, currentDelay));
+                            currentDelay *= 2;
+                            continue;
+                        } else {
+                            throw new Error("Rate limit exceeded after max retries.");
+                        }
+                    } else {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error("Gemini API call failed:", error);
+                    // If it's the last attempt or a non-retryable error, display a message
+                    if (i === maxRetries - 1 || error.message.includes("API Error")) {
+                        const errorMessage = "Sorry, I am having trouble connecting to the service. Please try again.";
+                        saveMessage('bot', errorMessage);
+                        displayMessage('bot', errorMessage);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // --- NEW GEMINI FEATURE: DOCUMENT SIMPLIFIER ---
+
+        async function getSimplifiedText(complexText) {
+            simplifierLoading.classList.remove('hidden');
+            runSimplifier.disabled = true;
+            simplifierOutputContainer.classList.add('hidden');
+
+            const userPrompt = `Simplify the following legal/government text: "${complexText}"`;
+
+            // System Instruction for Text Simplification
+            const systemInstruction = `You are an expert document simplifier for citizens with low digital and linguistic literacy in Odisha. Your goal is to make complex rules easy to understand.
+                -- Rules:
+                1. Analyze the text and identify the 3-5 most critical points.
+                2. Present the simplified output as a bulleted list.
+                3. For each bullet point, write the simple explanation first in **Odia** (using the Odia script) and then provide the exact **English translation in parentheses**.
+                4. Do NOT use markdown headers or titles in the final output.
+            `;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+            };
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, the text could not be simplified.";
+                    
+                    simplifierOutput.innerHTML = formatMessageContent(text).replace(/\n/g, '<br>'); // Display output
+                    simplifierOutputContainer.classList.remove('hidden');
+
+                } else {
+                    simplifierOutput.textContent = `Error: Could not simplify text. API returned status ${response.status}.`;
+                    simplifierOutputContainer.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Simplifier API call failed:", error);
+                simplifierOutput.textContent = `An unexpected error occurred during simplification. Please try again.`;
+                simplifierOutputContainer.classList.remove('hidden');
+            } finally {
+                simplifierLoading.classList.add('hidden');
+                runSimplifier.disabled = false;
+            }
+        }
+
+
+        // --- EVENT HANDLERS ---
+
+        async function handleSend() {
+            const userText = userInput.value.trim();
+            if (userText === '') return;
+
+            displayMessage('user', userText);
+            saveMessage('user', userText);
+            userInput.value = '';
+
+            await getGeminiResponse(userText);
+
+            loadingIndicator.classList.add('hidden');
+            sendButton.disabled = false;
+            voiceButton.disabled = false;
+        }
+
+        function handleVoiceMock() {
+            const sampleQueries = [
+                "I need money for seeds, what should I apply for?",
+                "Are there any housing schemes for poor people in Angul?",
+                "I live in Balasore and catch fish. Is there any financial help?",
+                "I am 22 and studying, do I get any benefit?",
+                "Is there any scheme for someone working as a laborer?"
+            ];
+            
+            const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
+            
+            displayMessage('user', `[Voice Input - Odia/English]: ${randomQuery}`);
+            saveMessage('user', randomQuery);
+            
+            getGeminiResponse(randomQuery).then(() => {
+                loadingIndicator.classList.add('hidden');
+                sendButton.disabled = false;
+                voiceButton.disabled = false;
+            });
+        }
+
+        // Attach Event Listeners
+        sendButton.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        voiceButton.addEventListener('click', handleVoiceMock);
+
+        profileToggle.addEventListener('click', () => {
+            profileModal.classList.remove('hidden');
+        });
+        
+        // Simplifier Handlers
+        simplifyToggle.addEventListener('click', () => {
+            simplifyModal.classList.remove('hidden');
+            simplifierOutputContainer.classList.add('hidden');
+            textToSimplify.value = ''; // Clear previous text
+        });
+
+        closeSimplifier.addEventListener('click', () => {
+            simplifyModal.classList.add('hidden');
+        });
+        
+        runSimplifier.addEventListener('click', () => {
+            const text = textToSimplify.value.trim();
+            if (text.length > 50) {
+                getSimplifiedText(text);
+            } else {
+                simplifierOutput.textContent = "Please paste a longer text snippet (at least 50 characters) to simplify.";
+                simplifierOutputContainer.classList.remove('hidden');
+            }
+        });
+
+        saveProfile.addEventListener('click', saveProfileData);
+
+        // --- START APP ---
+        initializeFirebase();
+
+    </script>
+</body>
+</html>

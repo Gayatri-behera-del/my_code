@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Attendance Register</title>
+    <link rel="stylesheet" href="website.css">
+</head>
+<body>
+    <header>
+        <h1>SmartAttend Faculty Portal</h1>
+        <p>Logged in as: Professor Smith</p>
+    </header>
+
+    <main>
+        <h2>Class Attendance Verification</h2>
+
+        <div class="controls card">
+            <div>
+                <label for="date-select">Select Date:</label>
+                <input type="date" id="date-select" value="2025-12-02">
+            </div>
+            <div>
+                <label for="class-select">Select Class:</label>
+                <select id="class-select">
+                    <option value="math101">MATH 101 - Calculus I</option>
+                    <option value="cs205">CS 205 - Data Structures</option>
+                    <option value="eng300">ENG 300 - Technical Writing</option>
+                </select>
+            </div>
+            <button class="confirm-btn" onclick="loadAttendance()">Load Attendance</button>
+        </div>
+
+        <div class="card" id="attendance-section" style="display: none;">
+            <h3>Attendance Register for <span id="current-class"></span></h3>
+            
+            <p class="note">**Note:** Status is pre-filled from Smartboard scan. Adjust manually if necessary.</p>
+
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Roll No.</th>
+                        <th>Student Name</th>
+                        <th>Smartboard Status</th>
+                        <th>Manual Override</th>
+                    </tr>
+                </thead>
+                <tbody id="attendance-list">
+                    </tbody>
+            </table>
+            
+            <button class="finalize-btn" onclick="finalizeAttendance()">Finalize and Submit Daily Record</button>
+        </div>
+        <a href="website.html" class="link-button">Go to Student View (Demo)</a>
+    </main>
+    <button class="logout-button">Log Out</button>
+    <script src="faculty_script.js"></script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Snake Game 🐍</title>
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: Arial, sans-serif;
+        background-color: #111;
+        color: #fff;
+        margin: 0;
+        padding: 0;
+    }
+    h1 { margin-top: 20px; }
+    canvas {
+        background-color: #000;
+        margin-top: 20px;
+        border: 3px solid #555;
+        touch-action: none;
+    }
+    p { font-size: 18px; margin-top: 10px; }
+    button {
+        margin-top: 10px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background-color: #28a745;
+        color: white;
+        font-size: 16px;
+    }
+</style>
+</head>
+<body>
+<h1>Ultimate Snake Game 🐍</h1>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+<p>Score: <span id="score">0</span></p>
+<button onclick="restartGame()">Restart Game</button>
+
+<script>
+// Canvas & variables
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const box = 20;
+let snake, food, score, d, speed, game, powerUp;
+let themeColors = ["#ff5555","#55ff55","#5555ff","#ff55ff","#55ffff"];
+let headColor = "#00ff00";
+let bgColor = "#111";
+
+// Initialize game
+function initGame() {
+    snake = [{ x: 200, y: 200 }];
+    food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+    powerUp = null;
+    score = 0;
+    d = null;
+    speed = 100;
+    document.getElementById("score").innerText = score;
+    clearInterval(game);
+    game = setInterval(draw, speed);
+}
+initGame();
+
+// Sounds (local)
+const eatSound = new Audio("sounds/eat.mp3");
+const gameOverSound = new Audio("sounds/gameover.mp3");
+const powerSound = new Audio("sounds/power.mp3");
+const bgMusic = new Audio("sounds/bg.mp3");
+bgMusic.loop = true;
+bgMusic.volume = 0.2;
+bgMusic.play().catch(()=>{}); // in case autoplay blocked
+
+// Mobile swipe
+let touchStartX = 0, touchStartY = 0;
+canvas.addEventListener('touchstart', (e)=>{ touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, {passive:true});
+canvas.addEventListener('touchend', (e)=>{
+    let dx = e.changedTouches[0].clientX - touchStartX;
+    let dy = e.changedTouches[0].clientY - touchStartY;
+    if(Math.abs(dx) > Math.abs(dy)){
+        if(dx > 0 && d !== "LEFT") d="RIGHT";
+        else if(dx < 0 && d !== "RIGHT") d="LEFT";
+    } else {
+        if(dy > 0 && d !== "UP") d="DOWN";
+        else if(dy < 0 && d !== "DOWN") d="UP";
+    }
+}, {passive:true});
+
+// Keyboard
+document.addEventListener("keydown", (event)=>{
+    if(event.key === "ArrowLeft" && d!=="RIGHT") d="LEFT";
+    else if(event.key === "ArrowUp" && d!=="DOWN") d="UP";
+    else if(event.key === "ArrowRight" && d!=="LEFT") d="RIGHT";
+    else if(event.key === "ArrowDown" && d!=="UP") d="DOWN";
+});
+
+// Collision
+function collision(head,array){ for(let i=0;i<array.length;i++){ if(head.x===array[i].x && head.y===array[i].y) return true;} return false;}
+
+// Random power-up
+function spawnPowerUp(){
+    powerUp = { x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box, type: "speed" };
+}
+
+// Draw
+function draw(){
+    // Night/Day theme
+    bgColor = (score%10 < 5) ? "#111" : "#eef";
+    ctx.fillStyle=bgColor;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // Snake trail effect
+    for(let i=0;i<snake.length;i++){
+        ctx.fillStyle = i===0 ? headColor : themeColors[i % themeColors.length];
+        ctx.globalAlpha = 1 - i*0.05;
+        ctx.fillRect(snake[i].x,snake[i].y,box,box);
+        ctx.strokeStyle="#111";
+        ctx.strokeRect(snake[i].x,snake[i].y,box,box);
+    }
+    ctx.globalAlpha = 1;
+
+    // Food
+    ctx.fillStyle="red";
+    ctx.fillRect(food.x,food.y,box,box);
+
+    // Power-up
+    if(!powerUp && Math.random()<0.01) spawnPowerUp();
+    if(powerUp){
+        ctx.fillStyle="yellow";
+        ctx.fillRect(powerUp.x,powerUp.y,box,box);
+    }
+
+    // Move snake
+    let snakeX = snake[0].x;
+    let snakeY = snake[0].y;
+    if(d==="LEFT") snakeX -= box;
+    if(d==="UP") snakeY -= box;
+    if(d==="RIGHT") snakeX += box;
+    if(d==="DOWN") snakeY += box;
+
+    // Eat food
+    if(snakeX===food.x && snakeY===food.y){
+        score++;
+        document.getElementById("score").innerText=score;
+        food = {x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box};
+        eatSound.play();
+
+        if(score%5===0 && speed>40){
+            speed -= 10;
+            clearInterval(game);
+            game=setInterval(draw,speed);
+        }
+    } else {
+        snake.pop();
+    }
+
+    // Eat power-up
+    if(powerUp && snakeX===powerUp.x && snakeY===powerUp.y){
+        speed = Math.max(30,speed-20);
+        clearInterval(game);
+        game=setInterval(draw,speed);
+        powerUp = null;
+        powerSound.play();
+    }
+
+    let newHead={x:snakeX,y:snakeY};
+
+    // Game over
+    if(snakeX<0 || snakeX>=canvas.width || snakeY<0 || snakeY>=canvas.height || collision(newHead,snake)){
+        clearInterval(game);
+        gameOverSound.play();
+        alert("Game Over! Score: "+score);
+        initGame();
+    }
+
+    snake.unshift(newHead);
+}
+
+// Restart
+function restartGame(){
+    initGame();
+}
+game = setInterval(draw,speed);
+</script>
+</body>
+</html>
+

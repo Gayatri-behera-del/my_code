@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Voice Super Cute Chat 💖</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', sans-serif;
+      background: #fff0f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      overflow: hidden;
+    }
+    h1 {
+      color: #ff3399;
+      margin-bottom: 20px;
+    }
+    input, button, select {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #ff99cc;
+    }
+    button {
+      background: #ff66b2;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    button:hover {
+      background: #ff3399;
+      transform: scale(1.05);
+    }
+    .predefined {
+      margin-top: 15px;
+    }
+    .predefined button {
+      background: #ff99cc;
+      color: white;
+    }
+    .predefined button:hover {
+      background: #ff66b2;
+    }
+    .heart {
+      position: absolute;
+      color: red;
+      font-size: 20px;
+      animation: floatUp 1s ease-out forwards;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-100px) scale(1.5); }
+    }
+    .bg-heart {
+      position: fixed;
+      font-size: 20px;
+      color: pink;
+      user-select: none;
+      pointer-events: none;
+      animation: floatBg 5s linear infinite;
+    }
+    @keyframes floatBg {
+      0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      100% { transform: translateY(-100vh) translateX(50px) rotate(360deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Custom Voice Super Cute Chat 💖</h1>
+  <label for="voiceSelect">Choose your voice:</label>
+  <select id="voiceSelect"></select>
+  <input type="text" id="textInput" placeholder="Meri jaan, kuch likho..." size="30">
+  <button onclick="speakText(this)">Bol do 😘</button>
+
+  <div class="predefined">
+    <button onclick="speakPredefined('Hi baby! Kaise ho meri jaan? 💕', this)">Hi Baby 💖</button>
+    <button onclick="speakPredefined('Tum meri duniya ho 😍', this)">Tum meri duniya 😍</button>
+    <button onclick="speakPredefined('Good morning sunshine! ☀️', this)">Good morning ☀️</button>
+    <button onclick="speakPredefined('Mujhe tumhari yaad aa rahi hai 😘', this)">Yaad aa rahi 😘</button>
+  </div>
+
+  <!-- Sounds -->
+  <audio id="popSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+  <audio id="bgMusic" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
+  <audio id="giggleSound" src="https://www.soundjay.com/human/sounds/laugh-01.mp3"></audio>
+  <audio id="kissSound" src="https://www.soundjay.com/human/sounds/kiss-1.mp3"></audio>
+
+  <script>
+    const popSound = document.getElementById('popSound');
+    const bgMusic = document.getElementById('bgMusic');
+    const giggleSound = document.getElementById('giggleSound');
+    const kissSound = document.getElementById('kissSound');
+    const voiceSelect = document.getElementById('voiceSelect');
+
+    bgMusic.volume = 0.2;
+
+    let voices = [];
+
+    function populateVoices() {
+      voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '';
+      voices.forEach((voice, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+    }
+
+    speechSynthesis.onvoiceschanged = populateVoices;
+
+    function createHeart(button) {
+      const heart = document.createElement('span');
+      heart.classList.add('heart');
+      heart.textContent = '💖';
+      heart.style.left = (Math.random() * button.offsetWidth) + 'px';
+      heart.style.top = '-20px';
+      button.appendChild(heart);
+      popSound.currentTime = 0; 
+      popSound.play();
+      setTimeout(() => heart.remove(), 1000);
+    }
+
+    function speakText(button) {
+      const text = document.getElementById('textInput').value;
+      if (text.trim() === "") {
+        alert("Kuch type karo meri jaan 💕");
+        return;
+      }
+      speak(text);
+      createHeart(button);
+      playCuteEffect();
+    }
+
+    function speakPredefined(message, button) {
+      speak(message);
+      createHeart(button);
+      playCuteEffect();
+    }
+
+    function speak(message) {
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = 'hi-IN';
+      utterance.rate = 1;
+      utterance.pitch = 1.2;
+      const selectedVoiceIndex = voiceSelect.value;
+      if (voices[selectedVoiceIndex]) {
+        utterance.voice = voices[selectedVoiceIndex];
+      }
+      speechSynthesis.speak(utterance);
+    }
+
+    function playCuteEffect() {
+      const effect = Math.random() < 0.5 ? giggleSound : kissSound;
+      effect.currentTime = 0;
+      effect.play();
+    }
+
+    // Background floating hearts
+    function createBgHeart() {
+      const heart = document.createElement('div');
+      heart.classList.add('bg-heart');
+      heart.textContent = '💖';
+      heart.style.left = Math.random() * window.innerWidth + 'px';
+      heart.style.fontSize = (10 + Math.random() * 30) + 'px';
+      document.body.appendChild(heart);
+      popSound.currentTime = 0;
+      popSound.play();
+      setTimeout(() => heart.remove(), 5000);
+    }
+
+    setInterval(createBgHeart, 300);
+  </script>
+</body>
+</html>
+

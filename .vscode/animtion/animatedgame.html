@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage to the Unknown - Space Survival</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 5px black;
+        }
+        #score-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #0de077;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            pointer-events: none;
+        }
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            color: white;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .big-text {
+            font-size: 48px;
+            color: #ff4444;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px red;
+        }
+        button.restart-btn {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+            border-radius: 5px;
+            transition: transform 0.1s;
+        }
+        button.restart-btn:hover {
+            transform: scale(1.05);
+            background: #fff;
+        }
+        button.restart-btn:active {
+            transform: scale(0.95);
+        }
+        .cinematic-bar {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 10%;
+            background-color: black;
+            z-index: 5;
+            pointer-events: none;
+        }
+        #top-bar { top: 0; }
+        #bottom-bar { bottom: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <h1>Voyage to the Unknown</h1>
+        <p>Pilot: Sweety | Dodge the Asteroids!</p>
+    </div>
+
+    <div id="score-display">SCORE: 0</div>
+
+    <div id="game-over-screen">
+        <div class="big-text">CRITICAL FAILURE</div>
+        <p>Your journey ended prematurely.</p>
+        <p id="final-score" style="margin-bottom: 30px; font-size: 20px;">Score: 0</p>
+        <button class="restart-btn" onclick="resetGame()">RESTART MISSION</button>
+    </div>
+
+    <!-- Cinematic Bars -->
+    <div id="top-bar" class="cinematic-bar"></div>
+    <div id="bottom-bar" class="cinematic-bar"></div>
+
+    <canvas id="movieCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('movieCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const scoreDisplay = document.getElementById('score-display');
+    const finalScoreDisplay = document.getElementById('final-score');
+
+    let width, height;
+    
+    // Game State
+    let isGameOver = false;
+    let score = 0;
+    let difficultyMultiplier = 1;
+    let particles = [];
+    const stars = [];
+    const planets = [];
+    let obstacles = []; // The asteroids
+    
+    // Mouse/Touch interaction
+    const mouse = { x: 0, y: 0 };
+    
+    // Rocket Object
+    const rocket = {
+        x: 100,
+        y: 0, 
+        targetY: 0,
+        width: 60,
+        height: 30,
+        color: '#e0e0e0',
+        windowColor: '#87CEEB',
+        finColor: '#ff4444',
+        dead: false
+    };
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        
+        if (rocket.y === 0) {
+            rocket.y = height / 2;
+            rocket.targetY = height / 2;
+            mouse.y = height / 2;
+        }
+    }
+
+    window.addEventListener('resize', resize);
+    
+    // Input Handling
+    window.addEventListener('mousemove', (e) => {
+        if (!isGameOver) {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        }
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isGameOver) {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+            e.preventDefault(); 
+        }
+    }, { passive: false });
+
+    // Global function for the button to call
+    window.resetGame = function() {
+        isGameOver = false;
+        rocket.dead = false;
+        score = 0;
+        difficultyMultiplier = 1;
+        obstacles = [];
+        particles = [];
+        rocket.y = height / 2;
+        rocket.targetY = height / 2;
+        mouse.y = height / 2;
+        gameOverScreen.style.display = 'none';
+        scoreDisplay.textContent = `SCORE: 0`;
+    }
+
+    // --- Classes ---
+
+    class Star {
+        constructor() { this.reset(true); }
+        reset(randomX = false) {
+            this.x = randomX ? Math.random() * width : width + 10;
+            this.y = Math.random() * height;
+            this.size = Math.random() * 2 + 0.5; 
+            this.speed = this.size * 1.5; 
+            this.brightness = Math.random();
+            this.twinkleSpeed = Math.random() * 0.05;
+        }
+        update() {
+            this.x -= this.speed + (difficultyMultiplier - 1) * 2; // Stars speed up too
+            this.brightness += this.twinkleSpeed;
+            if (this.brightness > 1 || this.brightness < 0.3) this.twinkleSpeed *= -1;
+            if (this.x < 0) this.reset();
+        }
+        draw() {
+            ctx.globalAlpha = this.brightness;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    class Particle {
+        constructor(x, y, isExplosion = false) {
+            this.x = x;
+            this.y = y;
+            if (isExplosion) {
+                // Explosion particles go everywhere
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.color = `hsl(${Math.random() * 60}, 100%, 50%)`;
+                this.size = Math.random() * 5 + 2;
+            } else {
+                // Engine trail
+                this.vx = (Math.random() - 0.5) * 2 - 4;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.decay = Math.random() * 0.03 + 0.01;
+                this.color = `hsl(${Math.random() * 40 + 10}, 100%, 50%)`;
+                this.size = Math.random() * 3 + 1;
+            }
+            this.life = 1.0;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= this.decay;
+        }
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    class Planet {
+        constructor() { this.reset(true); }
+        reset(initial = false) {
+            this.radius = Math.random() * 80 + 20;
+            this.x = initial ? Math.random() * width + width : width + this.radius + Math.random() * 500;
+            this.y = Math.random() * (height - 200) + 100;
+            this.speed = (150 / this.radius) * 0.5;
+            const hues = [200, 280, 350, 40, 160];
+            const hue = hues[Math.floor(Math.random() * hues.length)];
+            this.color = `hsl(${hue}, 60%, 40%)`;
+            this.hasRings = Math.random() > 0.7;
+        }
+        update() {
+            this.x -= this.speed;
+            if (this.x < -this.radius - 100) this.reset();
+        }
+        draw() {
+            const grad = ctx.createRadialGradient(
+                this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.1,
+                this.x, this.y, this.radius
+            );
+            grad.addColorStop(0, this.color);
+            grad.addColorStop(1, '#000000');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            if (this.hasRings) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(Math.PI / 8);
+                ctx.scale(1, 0.3);
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 1.8, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 10;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+    }
+
+    class Obstacle {
+        constructor() {
+            this.size = Math.random() * 25 + 15;
+            // Ensure they don't spawn exactly on the edges where bars are
+            const safeTop = height * 0.15;
+            const safeBottom = height * 0.85;
+            
+            this.x = width + 50;
+            this.y = Math.random() * (safeBottom - safeTop) + safeTop;
+            
+            this.speed = (Math.random() * 5 + 4) * difficultyMultiplier;
+            this.rotation = Math.random() * Math.PI * 2;
+            this.rotationSpeed = Math.random() * 0.1 - 0.05;
+            
+            // Generate rock shape
+            this.points = [];
+            const sides = 6 + Math.floor(Math.random() * 4);
+            for(let i=0; i<sides; i++) {
+                const angle = (i / sides) * Math.PI * 2;
+                const r = this.size * (0.6 + Math.random() * 0.4);
+                this.points.push({x: Math.cos(angle) * r, y: Math.sin(angle) * r});
+            }
+        }
+
+        update() {
+            this.x -= this.speed;
+            this.rotation += this.rotationSpeed;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.fillStyle = '#666';
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            this.points.forEach((p, i) => {
+                if(i===0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // Highlight
+            ctx.beginPath();
+            ctx.arc(-this.size*0.3, -this.size*0.3, this.size*0.2, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // --- Init ---
+    resize();
+    for(let i=0; i<150; i++) stars.push(new Star());
+    for(let i=0; i<3; i++) planets.push(new Planet());
+
+    // --- Collision ---
+    function checkCollision(obs) {
+        if(rocket.dead) return false;
+        // Simple circle collision
+        const dx = rocket.x - obs.x;
+        const dy = rocket.y - obs.y;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+        // Rocket radius approx 15, obs radius = obs.size
+        // Add a little forgiveness (-5)
+        if (distance < (15 + obs.size - 5)) {
+            return true;
+        }
+        return false;
+    }
+
+    function triggerGameOver() {
+        isGameOver = true;
+        rocket.dead = true;
+        // Explosion
+        for(let i=0; i<30; i++) {
+            particles.push(new Particle(rocket.x, rocket.y, true));
+        }
+        // Show UI
+        finalScoreDisplay.textContent = "Final Score: " + Math.floor(score);
+        gameOverScreen.style.display = 'flex';
+    }
+
+    // --- Main Loop ---
+    function animate() {
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, width, height);
+
+        // Background Elements
+        stars.forEach(star => { star.update(); star.draw(); });
+        planets.sort((a,b) => a.speed - b.speed);
+        planets.forEach(planet => { planet.update(); planet.draw(); });
+
+        // Game Logic
+        if (!isGameOver) {
+            score += 0.1;
+            scoreDisplay.textContent = "SCORE: " + Math.floor(score);
+            
+            // Increase difficulty
+            difficultyMultiplier = 1 + (score / 500);
+
+            // Spawn Obstacles
+            // Spawn rate increases with difficulty
+            if (Math.random() < 0.02 * difficultyMultiplier) {
+                obstacles.push(new Obstacle());
+            }
+
+            // Rocket Movement
+            rocket.targetY = mouse.y;
+            const topLimit = height * 0.15 + 15;
+            const bottomLimit = height * 0.85 - 15;
+            if (rocket.targetY < topLimit) rocket.targetY = topLimit;
+            if (rocket.targetY > bottomLimit) rocket.targetY = bottomLimit;
+            rocket.y += (rocket.targetY - rocket.y) * 0.1;
+
+            // Engine Particles
+            for(let i=0; i<5; i++) {
+                particles.push(new Particle(rocket.x - 30, rocket.y));
+            }
+        }
+
+        // Handle Obstacles
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const obs = obstacles[i];
+            obs.update();
+            obs.draw();
+
+            if (checkCollision(obs)) {
+                triggerGameOver();
+            }
+
+            if (obs.x < -100) {
+                obstacles.splice(i, 1);
+            }
+        }
+
+        // Draw Rocket (if alive)
+        if (!rocket.dead) {
+            ctx.save();
+            ctx.translate(rocket.x, rocket.y);
+            const tilt = (rocket.targetY - rocket.y) * 0.005;
+            ctx.rotate(tilt);
+
+            // Body
+            ctx.fillStyle = rocket.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 40, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Fins
+            ctx.fillStyle = rocket.finColor;
+            ctx.beginPath();
+            ctx.moveTo(-20, 0); ctx.lineTo(-40, -20); ctx.lineTo(-10, 0); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-20, 0); ctx.lineTo(-40, 20); ctx.lineTo(-10, 0); ctx.fill();
+
+            // Window
+            ctx.fillStyle = rocket.windowColor;
+            ctx.beginPath(); ctx.arc(15, -5, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(16, -6, 2, 0, Math.PI * 2); ctx.fill();
+
+            ctx.restore();
+        }
+
+        // Particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.update();
+            p.draw();
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+
+</script>
+</body>
+</html>

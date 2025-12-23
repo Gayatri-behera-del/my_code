@@ -1,0 +1,192 @@
+/* --- Base Styles --- */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #f4f4f9;
+    color: #333;
+    scroll-behavior: smooth;
+}
+
+section {
+    padding: 100px 5%;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+h1, h2, h3 {
+    color: #007bff; /* Primary Blue */
+}
+
+/* --- Navigation --- */
+header {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+}
+.logo {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #007bff;
+}
+nav ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+nav ul li a {
+    text-decoration: none;
+    color: #333;
+    padding: 10px 15px;
+    transition: color 0.3s;
+}
+nav ul li a:hover {
+    color: #0056b3;
+}
+
+/* --- Hero Section Styling --- */
+#hero {
+    background: linear-gradient(135deg, #007bff, #00c6ff);
+    color: white;
+    min-height: 100vh;
+    padding-top: 0;
+}
+.hero-content {
+    padding: 20px;
+}
+#hero h1 {
+    font-size: 3.5em;
+    margin-bottom: 0.2em;
+    color: white;
+}
+#hero p {
+    font-size: 1.5em;
+    margin-bottom: 2em;
+}
+.button {
+    background-color: #ffc107; /* Accent Color */
+    color: #333;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.3s;
+}
+.button:hover {
+    background-color: #e0a800;
+    transform: scale(1.05);
+}
+
+/* --- Skills Section Styling --- */
+.alt-section {
+    background-color: #e9ecef;
+}
+.skills-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+}
+.skill-item {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 250px;
+}
+
+/* --- Projects Section Styling --- */
+#projects {
+    background-color: #fff;
+}
+.project-card {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 30px;
+    margin: 20px auto;
+    border-radius: 8px;
+    max-width: 800px;
+    text-align: left;
+    transition: transform 0.3s;
+}
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Footer --- */
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* ================================== */
+/* === ANIMATION STYLES (Crucial) === */
+/* ================================== */
+
+/* 1. Initial State (Hidden/Out of position) */
+.animate-on-scroll {
+    opacity: 0;
+    transition: opacity 1s ease-out, transform 1s ease-out;
+    transform: none; /* Resetting transform initially */
+}
+
+/* Fade In */
+.animate-on-scroll.fade-in {
+    transform: translateY(20px);
+}
+
+/* Left to Right */
+.animate-on-scroll.left-to-right {
+    transform: translateX(-100px);
+}
+
+/* Right to Left */
+.animate-on-scroll.right-to-left {
+    transform: translateX(100px);
+}
+
+/* Bottom Up */
+.animate-on-scroll.bottom-up {
+    transform: translateY(50px);
+}
+
+/* 2. Active State (When 'active' class is added by JS) */
+.animate-on-scroll.active {
+    opacity: 1;
+    transform: none; /* Move to final position */
+}
+
+/* Delay Utility Classes for Staggering Effects */
+.delay-1 { transition-delay: 0.2s !important; }
+.delay-2 { transition-delay: 0.4s !important; }
+/* Apply to .animate-on-scroll elements to stagger them */
+
+/* Hero Section Load-in Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-on-load {
+    opacity: 0;
+    animation: fadeIn 1s ease-out forwards;
+}
+.fade-in-on-load.delay-1 { animation-delay: 0.5s; }
+.fade-in-on-load.delay-2 { animation-delay: 1s; }
